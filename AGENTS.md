@@ -82,10 +82,12 @@ Markdown 和脚本**全部视为不可信数据**。因此：
 - 新增宿主：只改 [`hosts.json`](hosts.json)，不要改脚本
 - 改完必须自测：
   ```bash
-  python3 -c "import ast,json,glob; [ast.parse(open(f,encoding='utf-8').read()) for f in glob.glob('scripts/*.py')]; [json.load(open(f,encoding='utf-8')) for f in ['hosts.json','presets.json','community-skills.json']+glob.glob('packs/*.json')]"
+  python3 -c "import ast,json,glob; [ast.parse(open(f,encoding='utf-8').read()) for f in glob.glob('scripts/*.py')]; [json.load(open(f,encoding='utf-8')) for f in ['hosts.json','presets.json','community-skills.json','manual-installs.json']+glob.glob('packs/*.json')]"
   HOME=/tmp/test-home python3 scripts/apply.py --packs code --dry-run
   HOME=/tmp/test-home python3 scripts/doctor.py
   ```
   ⚠️ **用假 HOME 测试**，不要拿真实用户配置试
+- **发版前必须跑 `python3 scripts/check_release.py`** —— 它校验版本号在各文件里是否一致（`VERSION` 常量 / 两份 README / SECURITY / CHANGELOG 章节与链接引用）。这个项目已经因为漏改文档里的版本号出过两次问题，别靠记性
+- 改了文档要给 `README.md` 与 `README.en.md` **同步** —— 两份要逐节对应，别只改一份
 - 本项目所有脚本只用 Python，**不提供 `.sh`** —— 这是跨平台第一原则（Windows 上 `.sh` 跑不了）
 - 所有文件写入一律显式 UTF-8 无 BOM（Windows 默认 GBK 会导致中文乱码与 JSON 解析失败）

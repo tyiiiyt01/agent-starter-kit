@@ -28,6 +28,24 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 
 ---
 
+## [0.2.2] - 2026-10-12
+
+> 新增英文版 README，并修掉一处「文档指向旧版本」的问题。
+
+### Added
+
+- **英文版 `README.en.md`** —— 与中文版逐节对应（21 个 `##` 章节、27 处表格、6 个代码块一一对齐），顶部互加语言切换链接。首次出现处为中国特有事物补了国际读者语境（CNKI、GB/T 7714、CUMCM、国内镜像加速）
+  - 说明：GitHub 对仓库 README **没有原生语言选择器**（那是文档站的功能），社区标准做法就是顶部切换链接 + 两个语言文件
+  - `AGENTS.md` / `INSTALL.md` / `uninstall.md` / `SECURITY.md` 仍为中文 —— 它们是给 LLM 读的，模型处理中文无碍；翻译它们会增加一处需要同步维护、容易漂移的副本。需要时可再补
+- `scripts/check_release.py` —— **发版前校验版本号一致性**的维护者工具
+
+### Fixed
+
+- **README 与 SECURITY.md 的锁版本示例停在 `v0.2.0`** —— v0.2.1 发版时只改了 `VERSION` 常量和 CHANGELOG，漏改了这两处文档。后果是文档告诉用户去锁一个**不含新特性的旧版本**
+  - 这已是同类问题第二次出现（v0.2.0 发版时也漏过一次），所以除了修实例，加了 `check_release.py` 防止再犯：它逐文件找出「写的版本号与 `apply.py` 的 VERSION 不一致」的地方，并检查 CHANGELOG 是否有对应章节
+
+---
+
 ## [0.2.1] - 2026-10-12
 
 > 宿主适配从 6 个扩到 **16 个**。想要可复现行为请锁这一版：
@@ -145,15 +163,18 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 <!--
 下一个版本请在此处新增一节，例如：
 
-## [0.2.0] - YYYY-MM-DD
+## [x.y.z] - YYYY-MM-DD
 
 ### Added
 ### Changed
 ### Fixed
 ### Removed
 
-并在文件末尾更新链接。
+并在文件末尾补上对应的链接引用。
 -->
 
-[Unreleased]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/tyiiiyt01/agent-starter-kit/releases/tag/v0.1.0

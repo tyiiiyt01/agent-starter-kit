@@ -1,5 +1,7 @@
 # agent-starter-kit — 把 AI 助手，一次配置成能干活的搭子
 
+**[English](README.en.md) | 简体中文**
+
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](#支持哪些宿主)
@@ -375,10 +377,10 @@ python3 scripts/apply.py --packs code --with-community all          # 全部 13 
 - **锁定版本**（想要可复现的行为时推荐）：
 
   ```bash
-  git clone --branch v0.2.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
+  git clone --branch v0.2.2 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
   ```
 
-  当前最新发布是 `v0.2.0`。`--branch v0.2.0` 把行为固定在那一版，不再随 `main` 漂移；`--depth 1` 只取这一版。
+  当前最新发布是 `v0.2.2`。`--branch v0.2.2` 把行为固定在那一版，不再随 `main` 漂移；`--depth 1` 只取这一版。
   变更记录见 [CHANGELOG.md](CHANGELOG.md)，为什么建议锁版本见 [SECURITY.md](SECURITY.md) 第 3.4 节。
 - **只是想补装某个包 / 技能**：直接说「再帮我装 `design` 包」或「加上 `anthropics-skills`」，不用整套重来。
 
@@ -411,6 +413,7 @@ python3 scripts/apply.py --packs code --with-community all          # 全部 13 
 ```
 agent-starter-kit/
 ├── README.md             ← 你正在看的
+├── README.en.md          ← 英文版（顶部有语言切换）
 ├── AGENTS.md             ← 助手的行为约束（它会自动读这个文件）
 ├── INSTALL.md            ← 执行手册（Step 0–6），助手照这个走
 ├── llms.txt              ← 文件索引，方便助手一页看懂整个仓库
@@ -429,7 +432,9 @@ agent-starter-kit/
 ├── scripts/
 │   ├── detect.py         ← 环境探测（只读）
 │   ├── apply.py          ← 幂等安装，支持 --dry-run / --tier / --minimal-mcp
-│   └── doctor.py         ← 逐项自检，验证「能真的执行」
+│   ├── doctor.py         ← 逐项自检，验证「能真的执行」
+│   ├── pin_commits.py    ← （维护者）刷新社区技能的 commit 锚点
+│   └── check_release.py  ← （维护者）发版前校验版本号一致性
 ├── packs/                ← 八个能力包定义 + SCHEMA.md（格式说明）
 └── skills/               ← 十七个技能文件（逐字节一致，不可改）
 ```
