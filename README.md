@@ -151,9 +151,9 @@ npx skills add tyiiiyt01/agent-starter-kit
 常用变体：
 
 ```bash
-npx skills add tyiiiyt01/agent-starter-kit --list          # 先看看有哪些技能
-npx skills add tyiiiyt01/agent-starter-kit --skill xlsx     # 只装某一个
-npx skills add tyiiiyt01/agent-starter-kit -g               # 装到用户级（全局）
+npx skills add tyiiiyt01/agent-starter-kit --list              # 先看看有哪些技能
+npx skills add tyiiiyt01/agent-starter-kit --skill office-docs  # 只装某一个
+npx skills add tyiiiyt01/agent-starter-kit -g                   # 装到用户级（全局）
 ```
 
 > ⚠️ 两个注意点，实测发现的：
@@ -188,10 +188,19 @@ https://github.com/tyiiiyt01/agent-starter-kit 我要写毕业论文
 ### ③ 想锁版本（要可复现行为时）
 
 ```bash
-gh skill install tyiiiyt01/agent-starter-kit --all --pin v0.2.3
+gh skill install tyiiiyt01/agent-starter-kit \
+  --all --agent claude-code --scope user --pin v0.2.4
 ```
 
-`gh skill install` 支持 `--pin <tag|sha>`，可以钉到具体版本。本套件自己的安装器也用 commit 锚点做同样的事（见 [SECURITY.md](SECURITY.md) 第 3.4 节）。
+`gh skill install` 支持 `--pin <tag|sha>`，可以钉到具体版本。
+
+⚠️ 这条命令有几点要注意（都是实跑 `--help` 核实的）：
+
+- **必须显式给 `--agent` 和 `--scope`** —— 它的默认是 `--scope project` + `--agent github-copilot`，不给参数会装错地方
+- **该命令目前是 preview 状态**，GitHub 明说「可能随时变动」
+- 支持的 `--agent` 值有几十个（`claude-code` / `cursor` / `codex` / `gemini-cli` / `cline` / `opencode` / `amp` 等），用 `gh skill install --help` 看全量列表
+
+本套件自己的安装器也用 commit 锚点做同样的事（见 [SECURITY.md](SECURITY.md) 第 3.4 节）。
 
 ### 只装某几个包 / 加社区技能
 
@@ -294,7 +303,7 @@ gh skill install tyiiiyt01/agent-starter-kit --all --pin v0.2.3
 所以本套件的设计是：
 
 - 每个包**只挂它真正需要的少数几个** MCP，不搞「必装十大 MCP」
-- 每个包标记一个 `essential`，用 `--minimal-mcp` 可以只留这一个
+- 挂了 MCP 的包各自标记一个 `essential`，用 `--minimal-mcp` 可以只留这一个；没挂 MCP 的包（writing / office-work / study）不涉及
 - 如果你觉得 AI 反应变慢、记不住前面说的话 —— 大概率是 MCP 吃掉了上下文，试试 `--minimal-mcp`
 
 ## 社区高星技能
@@ -434,10 +443,10 @@ python3 scripts/apply.py --packs code --with-community all          # 全部 13 
 - **锁定版本**（想要可复现的行为时推荐）：
 
   ```bash
-  git clone --branch v0.2.3 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
+  git clone --branch v0.2.4 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
   ```
 
-  当前最新发布是 `v0.2.3`。`--branch v0.2.3` 把行为固定在那一版，不再随 `main` 漂移；`--depth 1` 只取这一版。
+  当前最新发布是 `v0.2.4`。`--branch v0.2.4` 把行为固定在那一版，不再随 `main` 漂移；`--depth 1` 只取这一版。
   变更记录见 [CHANGELOG.md](CHANGELOG.md)，为什么建议锁版本见 [SECURITY.md](SECURITY.md) 第 3.4 节。
 - **只是想补装某个包 / 技能**：直接说「再帮我装 `design` 包」或「加上 `anthropics-skills`」，不用整套重来。
 

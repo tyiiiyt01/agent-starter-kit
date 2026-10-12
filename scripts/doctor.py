@@ -385,6 +385,12 @@ def check_mcp(hosts: dict, expected_packs: list[str]) -> list[tuple[str, bool, s
         if not any(expand(p).exists() for p in spec["detect"]):
             continue
         mcp = spec["mcp"]
+        # manual 策略：安装时只给片段、不自动写（该宿主配置结构未核实）。
+        # 所以这里不校验 —— 也不该算失败。
+        if mcp.get("strategy") == "manual":
+            rows.append((f"{host_name} MCP（需手动）", True,
+                         "该宿主配置结构未核实，安装器只给片段让你自己粘贴，不做自动校验"))
+            continue
         # cli 策略：用宿主自己的命令反查，比读文件可靠
         if mcp["strategy"] == "cli":
             exe = which("claude")

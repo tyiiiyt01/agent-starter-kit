@@ -153,7 +153,7 @@ Common variants:
 
 ```bash
 npx skills add tyiiiyt01/agent-starter-kit --list          # see what skills are available first
-npx skills add tyiiiyt01/agent-starter-kit --skill xlsx     # install just one
+npx skills add tyiiiyt01/agent-starter-kit --skill office-docs  # install just one
 npx skills add tyiiiyt01/agent-starter-kit -g               # install at the user level (global)
 ```
 
@@ -189,10 +189,19 @@ Your assistant probes the environment itself, matches a scenario, and prints a l
 ### ③ Want a pinned version (when you need reproducible behavior)
 
 ```bash
-gh skill install tyiiiyt01/agent-starter-kit --all --pin v0.2.3
+gh skill install tyiiiyt01/agent-starter-kit \
+  --all --agent claude-code --scope user --pin v0.2.4
 ```
 
-`gh skill install` supports `--pin <tag|sha>` to pin to a specific version. This kit's own installer does the same thing with commit anchors (see [SECURITY.md](SECURITY.md) section 3.4).
+`gh skill install` supports `--pin <tag|sha>` to pin to a specific version.
+
+⚠️ A few things to note about this command (all verified by actually running `--help`):
+
+- **You must explicitly pass `--agent` and `--scope`** — its defaults are `--scope project` + `--agent github-copilot`, so omitting them installs to the wrong place
+- **The command is currently in preview**, and GitHub says outright it "may change at any time"
+- It accepts dozens of `--agent` values (`claude-code` / `cursor` / `codex` / `gemini-cli` / `cline` / `opencode` / `amp` etc.); run `gh skill install --help` for the full list
+
+This kit's own installer does the same thing with commit anchors (see [SECURITY.md](SECURITY.md) section 3.4).
 
 ### Installing only a few packs / adding community skills
 
@@ -295,7 +304,7 @@ This runs counter to "more is better". Measured data: **3 MCPs already consume 1
 So this kit is designed like this:
 
 - Each pack attaches **only the few MCPs it truly needs**, not a "must-install top ten MCPs".
-- Each pack marks one as `essential`; with `--minimal-mcp` you keep only that one.
+- Each pack that attaches MCPs marks one as `essential`; with `--minimal-mcp` you keep only that one. Packs without MCPs (writing / office-work / study) aren't affected.
 - If the AI feels slow or forgets what you said earlier — it's most likely MCPs eating the context; try `--minimal-mcp`.
 
 ## High-star community skills
@@ -432,10 +441,10 @@ Installation is **idempotent**: running it repeatedly won't reinstall, it only f
 - **Pin a version** (recommended when you want reproducible behavior):
 
   ```bash
-  git clone --branch v0.2.3 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
+  git clone --branch v0.2.4 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
   ```
 
-  The current latest release is `v0.2.3`. `--branch v0.2.3` pins behavior to that version so it no longer drifts with `main`; `--depth 1` fetches only that version.
+  The current latest release is `v0.2.4`. `--branch v0.2.4` pins behavior to that version so it no longer drifts with `main`; `--depth 1` fetches only that version.
   See [CHANGELOG.md](CHANGELOG.md) for the change log, and [SECURITY.md](SECURITY.md) section 3.4 for why pinning is recommended.
 - **Just adding a pack / skill**: just say "also install the `design` pack" or "add `anthropics-skills`" — no need to redo the whole thing.
 

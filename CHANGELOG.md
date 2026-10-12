@@ -28,6 +28,38 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 
 ---
 
+## [0.2.4] - 2026-10-12
+
+> 一轮全面自检（机械检查 + 行为测试 + 新人眼评审）后修掉的问题。**其中两条是「安全声明名不副实」。**
+
+### Fixed
+
+- **⚠️ `apply.py` 会真的执行 `sudo` 命令** —— 而 README / SECURITY.md / AGENTS.md / INSTALL.md 都承诺「不写系统级配置、不用管理员权限」。原因是 `packs/*.json` 里 Linux 侧写了 `"sudo apt-get install -y pandoc"`（apt 天然需要 sudo），而 `do_cli_dep` 只拦了 shell 管道，没拦提权。**这是「看起来安全其实不安全」的典型**，macOS 上用 brew 才没暴露
+  - 现在改为：命令含 `sudo` / `doas` / `pkexec` 一律**不自动执行**，降级为「给用户命令让他自己跑」并附上替代方案
+- **⚠️ `--force-unverified` 会连带放行「技能装到推测路径」** —— 而 INSTALL.md 明确说「技能目录用 `--skill-dir` 确认、MCP 才用 `--force-unverified`」。实测单独给 `--force-unverified` 会把技能写进未经用户确认的推测目录，与「装到哪个位置不能只靠自觉」的设计相悖
+  - 现在两个开关各管一件事，互不替代
+- **`apply.py` 对 `skills: []` 的宿主会崩溃** —— 退出码 3 守卫里打印推测路径时用了 `s['skills'][0]`，而 Amp / Kiro 的 `skills` 是空数组。Amp 是 `partial` 必然走这条分支，实测抛 `IndexError`
+  - 后果：文档反复承诺的守卫对这类宿主直接失效，agent 拿到的是崩溃堆栈。已修
+- **`gh skill install` 的命令示例会装到错地方** —— README 原来写 `gh skill install <repo> --all --pin v0.2.4`，但没有 `--agent` 与 `--scope`。实跑 `--help` 核实：它的**默认是 `--scope project` + `--agent github-copilot`**。已补全参数并注明该命令处于 **preview** 状态
+- **`npx skills add ... --skill xlsx` 引用了不存在的技能** —— 本仓 17 个技能里没有 `xlsx`（那是别的仓库的），新手照抄会装了 0 个。改为真实存在的 `office-docs`
+- **`uninstall.md` 硬编码了 `mcpServers` 段名** —— 而 Zed 用 `context_servers`、OpenCode 用 `mcp`，对它们会**静默删不掉**还打印「跳过」，用户以为卸干净了其实没有。改为按 `hosts.json` 的 `mcp.key` 取值（与 `doctor.py` 一致）
+- **`--allow-unpinned` 的文档描述与代码不符** —— 说法暗示它能绕过「锚点不匹配」，实际它只对「清单里没有锚点」生效；锚点不匹配一律中止（那正是镜像篡改/repo-jacking 的信号）。**行为是对的，是文档写错了** —— 已改准确，`--help` 同步
+- 文档补上**退出码 2**（没探测到任何宿主）—— 此前只列了 3 和 4，还说「三个守卫」
+- `requirements.txt` 的描述说「只有一个包」，实际还有一个 `tomli; python_version < "3.11"`
+- 「每个包标记一个 `essential`」不准确 —— `writing` / `office-work` / `study` 的 `mcp` 是空数组，没有 MCP 可标
+
+### Added
+
+- **MCP `strategy: "manual"`** —— 用于「配置文件结构未核实」的宿主：**只给配置片段、不自动写**。宁可不写，也不按猜测的结构写坏用户配置
+  - 首个使用它的是 **Amp**：它的段名 `amp.mcpServers` 是点号形式，无法确认是「字面点号 key」还是「嵌套结构」（JSON 两种都合法）。此前会按字面 key 平铺写入 —— 也就是**大概率写错**
+  - `doctor.py` 同步认得该策略：报「需手动」且**不算失败**
+
+### Changed
+
+- **`--dry-run` 遇到工作区歧义不再中止** —— 此前 `Reasonix` 有多个工作区时，连预演都会以退出码 4 失败，用户看不到任何计划。现在预演会列出全部候选、用第一个展示（并明确标注「实际安装会中止并要求 `--skill-dir`」）；真正安装仍严格中止
+
+---
+
 ## [0.2.3] - 2026-10-12
 
 > 重新表述「怎么装」：**这个仓库本质上就是一批标准技能，可以像装别的 skill 一样装。**
@@ -193,7 +225,8 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 并在文件末尾补上对应的链接引用。
 -->
 
-[Unreleased]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.0...v0.2.1

@@ -247,21 +247,22 @@
     "amp": {
       "display": "Amp（Sourcegraph）",
       "verified": "partial",
-      "_verified_detail": "MCP 配置文件位置有官方文档，但段名 amp.mcpServers 是嵌套键，本脚本按单层键写入会写错结构 —— 装前必须让用户确认实际结构。",
+      "_verified_detail": "配置文件位置有官方文档，但段名 'amp.mcpServers' 是【点号形式】—— 无法确认它是「字面点号 key」还是「嵌套结构」（JSON 两种都合法）。脚本按任一种写都可能写错，所以策略设为 manual：只给片段、不自动写。",
       "_source": "https://ampcode.com/manual",
       "detect": ["~/.config/amp", "%APPDATA%/amp"],
       "skills": [],
       "_skills_note": "Amp 用 AGENT.md 而不是 SKILL.md，不支持技能投放",
       "mcp": {
-        "strategy": "json",
+        "strategy": "manual",
         "file": {
           "darwin": "~/.config/amp/settings.json",
           "win32": "%APPDATA%/amp/settings.json",
           "linux": "~/.config/amp/settings.json"
         },
-        "key": "amp.mcpServers"
+        "key": "amp.mcpServers",
+        "_key_warning": "点号 key —— 若实际是嵌套结构，手写时要写成 {\"amp\": {\"mcpServers\": {...}}}"
       },
-      "confirm_hint": "Amp 的段名是嵌套的 amp.mcpServers —— 确认实际结构后再写，脚本的扁平写入可能不符"
+      "confirm_hint": "确认 Amp 的段名到底是字面 'amp.mcpServers' 还是嵌套；确认后可手动改为 strategy=json 让它自动写"
     },
 
     "reasonix": {

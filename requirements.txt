@@ -1,5 +1,7 @@
 # agent-starter-kit 安装引擎自身需要的 Python 依赖
 #
+# 一共两个：tomli-w 为必装；tomli 仅在 Python < 3.11 时生效（环境标记控制）。
+#
 # 注意：这里放的是「安装器自己要用的」依赖，不是能力包的依赖。
 # 能力包（code / research / office ...）的依赖记在 packs/*.json 里，由 apply.py 按需安装。
 #

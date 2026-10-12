@@ -131,17 +131,26 @@ claude mcp remove arxiv      # 名字替换成账本里记录的 server
 python3 - <<'PY'
 import json, os
 state = json.load(open(os.path.expanduser("~/.agent-starter-kit/state.json")))
+hosts = json.load(open("hosts.json", encoding="utf-8"))["hosts"]
+
+def mcp_key(host):
+    # 段名不能硬编码：Zed 用 context_servers、OpenCode 用 mcp、Amp 用 amp.mcpServers，
+    # 只有多数宿主是 mcpServers。写死 mcpServers 会对那三个宿主静默删不掉、还打印「跳过」，
+    # 用户以为卸干净了其实没有。所以按 hosts.json 里该宿主的 mcp.key 取值（doctor.py 也是这么做的）。
+    mcp = (hosts.get(host) or {}).get("mcp") or {}
+    return mcp.get("key") or "mcpServers"
+
 targets = {}
 for item in state.get("mcp", []):
     if item.get("path"):
-        targets.setdefault(item["path"], set()).add(item["server"])
+        targets.setdefault((item["path"], item.get("host")), set()).add(item["server"])
 
-for path, names in targets.items():
+for (path, host), names in targets.items():
     path = os.path.expanduser(path)
     if not os.path.exists(path):
         print("跳过（文件不存在）", path); continue
     data = json.load(open(path, encoding="utf-8"))
-    servers = data.get("mcpServers", {})
+    servers = data.get(mcp_key(host), {})
     for n in names:
         if n in servers:
             del servers[n]

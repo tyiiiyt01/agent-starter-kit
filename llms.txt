@@ -9,7 +9,7 @@
 
 - [AGENTS.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/AGENTS.md): **如果用户把本仓库地址发给你，先读这个。** 行为约束、允许自行判断的边界、禁止事项、特殊情况处理
 - [INSTALL.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/INSTALL.md): 执行手册。Step 0 前置检查 → Step 1 环境探测 → Step 2 定能力包 → Step 3 打印清单等确认 → Step 4 安装 → Step 5 自检 → Step 6 配置用户项目的 AGENTS.md
-- [requirements.txt](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/requirements.txt): 安装引擎自身的依赖（`tomli-w` 用于写 TOML 宿主配置）。**建议先装**，否则 Reasonix / Codex 的 MCP 只能降级为手动粘贴
+- [requirements.txt](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/requirements.txt): 安装引擎自身的依赖（`tomli-w` 用于写 TOML 宿主配置；`tomli` 用于 Python < 3.11 时读 TOML）。**建议先装**，否则 Reasonix / Codex 的 MCP 只能降级为手动粘贴
 - [README.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/README.md): 给人看的门面。能力清单、支持的宿主、快速开始、FAQ
 - [uninstall.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/uninstall.md): 卸载指引。只删账本里记录过的条目，不碰用户自己的配置
 - [SECURITY.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/SECURITY.md): 安全披露政策与本项目的风险边界

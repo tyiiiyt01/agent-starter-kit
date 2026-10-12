@@ -37,7 +37,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 STATE_DIR = Path(os.path.expanduser("~")) / ".agent-starter-kit"
 STATE_FILE = STATE_DIR / "state.json"
 SHIM_DIR = STATE_DIR / "bin"
@@ -756,6 +756,14 @@ def do_mcp(action: dict, state: dict) -> str:
             state["mcp"].append(entry)
         return f"已合并写入 {name} → {path}（{shape}）"
 
+    # --- 策略四：manual —— 只给片段，不自动写 ---
+    # 用于「配置文件结构没能核实」的宿主。宁可不写，也不要按猜测的结构写坏用户配置。
+    if action["strategy"] == "manual":
+        return _emit_manual(
+            host_name, server,
+            "该宿主的配置结构未经核实（hosts.json 里标为 partial），"
+            "按猜测写入可能弄坏你的配置文件，所以只给片段让你自己核对后粘贴。")
+
     return _emit_manual(host_name, server, f"未知策略: {action['strategy']}")
 
 
@@ -820,6 +828,14 @@ def do_cli_dep(dep: dict, tier_limit: int, state: dict) -> str:
     cmd_str = dep.get("install", {}).get(os_key())
     if not cmd_str:
         return f"未安装 {name}，且当前系统没有适配的安装命令。装法见 README"
+    # ⚠️ 硬约束：绝不自动提权。
+    # 文档明确承诺「不写系统级配置、不用管理员/root 权限」——
+    # 那这条就必须由代码强制，不能靠 packs 里不写 sudo 来保证
+    # （Linux 侧的 apt 命令天然需要 sudo，一不小心就会漏进来）。
+    if re.search(r"(^|[\s/])sudo\b|\bdoas\b|\bpkexec\b", cmd_str):
+        return (f"未安装 {name}。该命令需要管理员权限，本套件承诺不自动提权，"
+                f"所以不代你执行。请自己运行:\n    {cmd_str}\n"
+                f"    不装的替代方案: {dep.get('fallback', '无')}")
     cmd = shlex.split(cmd_str)
     if any(ch in cmd_str for ch in "|&>"):
         return f"未安装 {name}。该命令需要 shell 管道，为安全不自动执行，请手动运行:\n    {cmd_str}"
@@ -985,8 +1001,9 @@ def main() -> int:
                     help="装社区高星技能。传 'all' 装全部，或传逗号分隔的 id。"
                          "默认一个都不装 —— 第三方仓库有许可/增长/体积风险，按需才是对的")
     ap.add_argument("--allow-unpinned", action="store_true",
-                    help="允许安装没有 commit 锚点的社区技能，或跳过锚点校验。"
-                         "等于放弃版本固定，会把自己暴露给镜像篡改与 repo-jacking")
+                    help="允许安装【没有 commit 锚点】的社区技能。"
+                         "⚠️ 它不能放行「锚点不匹配」的情况 —— 那种一律中止，"
+                         "因为那正是镜像篡改 / repo-jacking 的信号。")
     ap.add_argument("--gh-proxy", default="auto",
                     help="GitHub 加速前缀。'auto' 多路回退，'' 只用直连，或指定单个镜像")
     ap.add_argument("--no-mirrors", action="store_true", help="不生成 mirrors.env（国内加速环境变量）")
@@ -1025,26 +1042,33 @@ def main() -> int:
     for h, s in target_hosts.items():
         if s.get("verified") is True:
             continue
+        supports_skills = bool(s.get("skills") or s.get("skills_discovery"))
         reasons = []
-        if not args.skill_dir:
-            reasons.append("技能目录")
+        # 技能目录：只有「该宿主支持技能」时才要求 --skill-dir 确认。
+        # ⚠️ 不让 --force-unverified 代它放行 —— 技能装到推测路径同样是不可逆的，
+        # 文档承诺过「技能目录用 --skill-dir 确认」。两个开关各管一件事。
+        if supports_skills and not args.skill_dir:
+            reasons.append("技能目录（用 --skill-dir 指定）")
+        # MCP 路径没法用参数指定，只能靠 --force-unverified
         if writes_mcp and not args.force_unverified:
-            reasons.append("MCP 配置")
-        if reasons and not args.force_unverified:
+            reasons.append("MCP 配置（确认后用 --force-unverified 放行）")
+        if reasons:
             needs_confirm[h] = (s, reasons)
 
     if needs_confirm and not args.dry_run:
         print("[!] 以下宿主的路径未经核实，已停止以免写错位置：")
         for h, (s, reasons) in needs_confirm.items():
-            print(f"      {h}（{s.get('display')}）  verified={s.get('verified')}"
-                  f"  待确认：{'、'.join(reasons)}")
+            print(f"      {h}（{s.get('display')}）  verified={s.get('verified')}")
+            skills_hint = (s["skills"][0] if s.get("skills")
+                           else "(不支持技能，只注册 MCP)")
+            print(f"        推测路径：{skills_hint}  |  MCP: {resolve_mcp_file(s['mcp'])}")
             if s.get("confirm_hint"):
                 print(f"        怎么确认：{s['confirm_hint']}")
-            print(f"        推测路径：{s['skills'][0]}  |  MCP: {resolve_mcp_file(s['mcp'])}")
+            print(f"        待确认：{'；'.join(reasons)}")
         print()
-        print("    请先让用户确认真实路径，然后：")
-        print("      · 技能目录用 --skill-dir <路径> 指定")
-        print("      · MCP 路径确认后加 --force-unverified 放行")
+        print("    请先让用户确认真实路径，再带上对应参数重跑：")
+        print("      · 技能目录 → --skill-dir <路径>")
+        print("      · MCP 路径 → --force-unverified（两者互不替代）")
         print("    （只想看看会做什么，可以先加 --dry-run，它不会写任何东西。）")
         return 3
 
@@ -1071,14 +1095,31 @@ def main() -> int:
         community = (plan_community(entries, selected, target_hosts, args.skill_dir)
                      if selected else [])
     except AmbiguousSkillsDir as exc:
-        print(f"[!] {exc.host} 上找到多个候选技能目录，无法自动决定：")
-        for c in exc.candidates:
-            print(f"      {c}")
-        print()
-        print("    这是工作区制宿主（如 Reasonix）的正常情况 —— 每个工作区各有独立技能目录。")
-        print("    请用户确认当前用哪个工作区，然后用 --skill-dir 指定，例如：")
-        print(f"      python3 scripts/apply.py --packs <包> --skill-dir '{exc.candidates[0]}'")
-        return 4
+        if args.dry_run:
+            # 预演不写任何东西，所以不中止 —— 改用第一个候选展示，并明确标注。
+            # 真正安装时仍会中止（下面那条分支），因为猜错工作区是不可逆的。
+            print(f"[!] {exc.host} 上找到多个候选技能目录。预演用第一个展示，"
+                  f"**实际安装会中止并要求你用 --skill-dir 指定**：")
+            for c in exc.candidates:
+                print(f"      {c}")
+            print()
+            # 必须把三个变量都赋上 —— 否则后面的 render_plan 会 NameError
+            try:
+                skills, skills_skipped = plan_skills(pack_names, packs, target_hosts,
+                                                     str(exc.candidates[0]))
+            except Exception:  # noqa: BLE001
+                skills, skills_skipped = [], []
+            mcps = plan_mcp(pack_names, packs, target_hosts, minimal=args.minimal_mcp)
+            community = []
+        else:
+            print(f"[!] {exc.host} 上找到多个候选技能目录，无法自动决定：")
+            for c in exc.candidates:
+                print(f"      {c}")
+            print()
+            print("    这是工作区制宿主（如 Reasonix）的正常情况 —— 每个工作区各有独立技能目录。")
+            print("    请用户确认当前用哪个工作区，然后用 --skill-dir 指定，例如：")
+            print(f"      python3 scripts/apply.py --packs <包> --skill-dir '{exc.candidates[0]}'")
+            return 4
 
     py_deps = [] if args.no_python_deps else collect_python_deps(pack_names, packs)
     cli_deps = [] if args.no_cli else collect_cli_deps(pack_names, packs)
