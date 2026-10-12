@@ -345,10 +345,10 @@ python3 scripts/apply.py --packs code --with-community all          # 全部 13 
 - **锁定版本**（想要可复现的行为时推荐）：
 
   ```bash
-  git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
+  git clone --branch v0.2.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
   ```
 
-  当前已发布 `v0.1.0`。`--branch v0.1.0` 把行为固定在那一版，不再随 `main` 漂移；`--depth 1` 只取这一版。
+  当前最新发布是 `v0.2.0`。`--branch v0.2.0` 把行为固定在那一版，不再随 `main` 漂移；`--depth 1` 只取这一版。
   变更记录见 [CHANGELOG.md](CHANGELOG.md)，为什么建议锁版本见 [SECURITY.md](SECURITY.md) 第 3.4 节。
 - **只是想补装某个包 / 技能**：直接说「再帮我装 `design` 包」或「加上 `anthropics-skills`」，不用整套重来。
 

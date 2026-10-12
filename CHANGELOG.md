@@ -24,6 +24,15 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 
 ## [Unreleased]
 
+> 下一个版本的改动记在这里。
+
+---
+
+## [0.2.0] - 2026-10-12
+
+> 相比 v0.1.0：office 技能重写为出版级路线、新增三项安全强化、新增环境安装引导。
+> 想要可复现行为请锁这一版：`git clone --branch v0.2.0 --depth 1 <仓库地址>`
+
 ### Changed
 
 - **社区技能改为「默认一个都不装」** —— 上一版曾把 `anthropics-skills` 与 `ppt-master` 设为默认装，复核后撤回，理由三条：
