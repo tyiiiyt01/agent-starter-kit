@@ -20,6 +20,13 @@
     3. 读 INSTALL.md —— 执行手册，按 Step 0 ~ Step 6 走，不要跳
     4. 装完跑 doctor.py 自检，并主动问用户要不要给项目生成 AGENTS.md
 
+  ⚠️ 先判断用户到底要什么，别默认把每个人推去走完整流程：
+    · 只要技能、自己会配环境 → 一行标准命令就够，告诉他
+      `npx skills add tyiiiyt01/agent-starter-kit`（实测识别 17 个技能）
+      标准安装器只管技能，不管 MCP / 依赖 / 自检 —— 这些才是本仓安装器的增量
+    · 要 MCP + 依赖 + 场景预设 + 自检 → 才按 INSTALL.md 走完整流程
+    · 要可复现行为 → `gh skill install ... --pin <tag|sha>`，或用本仓安装器（commit 锚点）
+
   其他可读文件：llms.txt（文件索引）· hosts.json（宿主适配表）
               · presets.json（场景预设）· packs/SCHEMA.md（能力包格式）
 
@@ -129,11 +136,41 @@ $ https://github.com/tyiiiyt01/agent-starter-kit
 
 ## 快速开始
 
-### ① 我想一句话就装（推荐）
+**先说清一件事**：这个仓库本质上就是**一批标准技能** —— `skills/<技能名>/SKILL.md`，共 17 个，符合 Agent Skills 规范。所以你可以**像装别的 skill 一样装它**，不必走下面那套安装器。
 
-1. 先确保你**已经装好某个 AI 助手，并且接入了可用的 API**
-2. 把本仓库地址粘进对话框，再补一句用途，例如：`https://github.com/tyiiiyt01/agent-starter-kit 我要写毕业论文`
-3. 助手会自己探测环境、匹配场景、打印清单；**你回复确认**它才动手，装完再跑一遍自检，告诉你哪些能力现在可用
+三条路径，按你的情况选：
+
+### ① 只想要技能 → 一行标准命令
+
+```bash
+npx skills add tyiiiyt01/agent-starter-kit
+```
+
+**实测结果**：它识别出全部 17 个技能，装到 `~/.agents/skills/`，再在你已装工具（Claude Code / Cursor / Codex…）的技能目录建立链接。
+
+常用变体：
+
+```bash
+npx skills add tyiiiyt01/agent-starter-kit --list          # 先看看有哪些技能
+npx skills add tyiiiyt01/agent-starter-kit --skill xlsx     # 只装某一个
+npx skills add tyiiiyt01/agent-starter-kit -g               # 装到用户级（全局）
+```
+
+> ⚠️ 两个注意点，实测发现的：
+> 1. **需要 Node ≥ 22.20**（版本低会出 warning，但不一定跑不了）
+> 2. **它用软链接，不是复制** —— 而 Windows 上创建软链接需要管理员权限或开发者模式，可能失败。本套件的安装器**故意用复制**就是为了躲开这一点
+
+### ② 想要「技能 + MCP + 依赖 + 自检」→ 把地址粘给 AI 助手（推荐）
+
+**标准技能安装器只管技能。** MCP 注册、Python 依赖、命令行工具、场景预设、自检 —— 这些**没有任何标准机制能做**，因为每个宿主的 MCP 配置格式都不一样（JSON / TOML、字典 / 数组表）。
+
+把本仓库地址粘进对话框，再补一句用途：
+
+```
+https://github.com/tyiiiyt01/agent-starter-kit 我要写毕业论文
+```
+
+你的助手会自己探测环境、匹配场景、打印清单；**你回复确认**它才动手，装完再跑一遍自检，告诉你哪些能力现在可用。
 
 > 你不需要懂命令行，它会引导你。最后它还会问：**要不要给当前项目生成一个 `AGENTS.md`** —— 建议答应，这是新手最该配的一项，能让 AI 记住你的项目约定，省得每次重复交代。
 
@@ -148,11 +185,31 @@ $ https://github.com/tyiiiyt01/agent-starter-kit
 
 > 想核对它会做什么，打开上面任意一个文件都能自己看 —— 全是明文，没有隐藏逻辑。
 
-### ② 我想自己挑
+### ③ 想锁版本（要可复现行为时）
 
-直接用包名点名（包名见下节「八个能力包」），例如：`用 agent-starter-kit 帮我装 code 和 study 两个包`；想加社区技能也行：`帮我加上 anthropics-skills`。
+```bash
+gh skill install tyiiiyt01/agent-starter-kit --all --pin v0.2.3
+```
+
+`gh skill install` 支持 `--pin <tag|sha>`，可以钉到具体版本。本套件自己的安装器也用 commit 锚点做同样的事（见 [SECURITY.md](SECURITY.md) 第 3.4 节）。
+
+### 只装某几个包 / 加社区技能
+
+直接用包名点名（包名见下节「八个能力包」），例如：`用 agent-starter-kit 帮我装 code 和 study 两个包`；想加社区技能也行：`帮我加上 ppt-master`。
 
 > 匹配不上用途时，默认只装 `code`（最小可用），并告诉你以后可以随时加。
+
+### 三种方式对照
+
+| | ① 标准命令 | ② 粘给 AI 助手 | ③ 锁版本 |
+|---|---|---|---|
+| 技能 | ✅ 17 个 | ✅ | ✅ |
+| MCP 注册 | ❌ | ✅ | ❌ |
+| Python / CLI 依赖 | ❌ | ✅ | ❌ |
+| 场景预设（一句话定制） | ❌ | ✅ | ❌ |
+| 自检（真的跑一遍验证） | ❌ | ✅ | ❌ |
+| 版本固定 | 取默认分支 | commit 锚点校验 | ✅ `--pin` |
+| 适合谁 | 自己会配环境的人 | 不熟环境的用户 | 要可复现的人 |
 
 ## 支持哪些宿主
 
@@ -377,10 +434,10 @@ python3 scripts/apply.py --packs code --with-community all          # 全部 13 
 - **锁定版本**（想要可复现的行为时推荐）：
 
   ```bash
-  git clone --branch v0.2.2 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
+  git clone --branch v0.2.3 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
   ```
 
-  当前最新发布是 `v0.2.2`。`--branch v0.2.2` 把行为固定在那一版，不再随 `main` 漂移；`--depth 1` 只取这一版。
+  当前最新发布是 `v0.2.3`。`--branch v0.2.3` 把行为固定在那一版，不再随 `main` 漂移；`--depth 1` 只取这一版。
   变更记录见 [CHANGELOG.md](CHANGELOG.md)，为什么建议锁版本见 [SECURITY.md](SECURITY.md) 第 3.4 节。
 - **只是想补装某个包 / 技能**：直接说「再帮我装 `design` 包」或「加上 `anthropics-skills`」，不用整套重来。
 

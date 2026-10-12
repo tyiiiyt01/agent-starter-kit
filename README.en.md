@@ -20,6 +20,13 @@
     3. Read INSTALL.md — the runbook; follow Step 0 ~ Step 6, don't skip any
     4. After installing, run doctor.py for a self-check, and proactively ask the user whether they want an AGENTS.md generated for their project
 
+  ⚠️ First judge what the user actually wants — don't push everyone into the full flow by default:
+    · Want only the skills and can set up their own environment → a one-line standard command is enough; tell them
+      `npx skills add tyiiiyt01/agent-starter-kit` (verified: identifies 17 skills)
+      the standard installer only handles skills, not MCP / dependencies / self-check — those are this repo's installer's added value
+    · Want MCP + dependencies + scenario presets + self-check → then follow INSTALL.md through the full flow
+    · Want reproducible behavior → `gh skill install ... --pin <tag|sha>`, or use this repo's installer (commit anchor)
+
   Other readable files: llms.txt (file index) · hosts.json (host compatibility table)
               · presets.json (scenario presets) · packs/SCHEMA.md (capability pack format)
 
@@ -130,11 +137,41 @@ This thing only does what it should. The following it **explicitly does not do**
 
 ## Quick start
 
-### ① I want to install with one sentence (recommended)
+**One thing to get straight first**: this repository is essentially **a batch of standard skills** — `skills/<name>/SKILL.md`, 17 in total, conforming to the Agent Skills spec. So you can **install it just like any other skill**, without going through the installer below.
 
-1. First make sure you've **already installed an AI assistant and connected it to a working API**
-2. Paste this repository's URL into the chat box and add a one-line purpose, e.g.: `https://github.com/tyiiiyt01/agent-starter-kit I want to write a graduation thesis`
-3. The assistant probes the environment itself, matches a scenario, and prints a list; **it only acts after you confirm**, then runs a self-check and tells you which capabilities are now available.
+Three paths — pick the one that fits you:
+
+### ① Want only the skills → a one-line standard command
+
+```bash
+npx skills add tyiiiyt01/agent-starter-kit
+```
+
+**Verified result**: it identifies all 17 skills, installs them into `~/.agents/skills/`, then creates links in the skills directories of the tools you already have installed (Claude Code / Cursor / Codex…).
+
+Common variants:
+
+```bash
+npx skills add tyiiiyt01/agent-starter-kit --list          # see what skills are available first
+npx skills add tyiiiyt01/agent-starter-kit --skill xlsx     # install just one
+npx skills add tyiiiyt01/agent-starter-kit -g               # install at the user level (global)
+```
+
+> ⚠️ Two caveats, found by testing:
+> 1. **Requires Node ≥ 22.20** (lower versions emit a warning, though it may still run)
+> 2. **It uses symlinks, not copies** — and on Windows creating symlinks requires admin privileges or Developer Mode, so it may fail. This kit's installer **deliberately uses copies** precisely to avoid this
+
+### ② Want "skills + MCP + dependencies + self-check" → paste the URL to your AI assistant (recommended)
+
+**The standard skill installer only handles skills.** MCP registration, Python dependencies, command-line tools, scenario presets, and self-check — **no standard mechanism can do any of these**, because every host's MCP config format differs (JSON / TOML, dictionaries / arrays of tables).
+
+Paste this repository's URL into the chat box and add a one-line purpose:
+
+```
+https://github.com/tyiiiyt01/agent-starter-kit I want to write a graduation thesis
+```
+
+Your assistant probes the environment itself, matches a scenario, and prints a list; **it only acts after you confirm**, then runs a self-check and tells you which capabilities are now available.
 
 > You don't need to know the command line — it will guide you. At the end it also asks: **do you want an `AGENTS.md` generated for the current project** — say yes; this is the single most worthwhile setup for a beginner, letting the AI remember your project's conventions so you don't have to repeat them every time.
 
@@ -149,11 +186,31 @@ This thing only does what it should. The following it **explicitly does not do**
 
 > To check exactly what it will do, open any of the files above and see for yourself — it's all plain text, no hidden logic.
 
-### ② I want to pick for myself
+### ③ Want a pinned version (when you need reproducible behavior)
 
-Name the packs directly (see "Eight capability packs" below), e.g.: `use agent-starter-kit to install the code and study packs for me`; community skills work too: `also add anthropics-skills`.
+```bash
+gh skill install tyiiiyt01/agent-starter-kit --all --pin v0.2.3
+```
+
+`gh skill install` supports `--pin <tag|sha>` to pin to a specific version. This kit's own installer does the same thing with commit anchors (see [SECURITY.md](SECURITY.md) section 3.4).
+
+### Installing only a few packs / adding community skills
+
+Name the packs directly (see "Eight capability packs" below), e.g.: `use agent-starter-kit to install the code and study packs for me`; community skills work too: `also add ppt-master`.
 
 > When it can't match your purpose, it defaults to installing only `code` (the minimum usable set) and tells you that you can add more anytime.
+
+### Comparison of the three approaches
+
+| | ① Standard command | ② Paste to AI assistant | ③ Pinned version |
+|---|---|---|---|
+| Skills | ✅ 17 | ✅ | ✅ |
+| MCP registration | ❌ | ✅ | ❌ |
+| Python / CLI dependencies | ❌ | ✅ | ❌ |
+| Scenario presets (one-sentence customization) | ❌ | ✅ | ❌ |
+| Self-check (really runs to verify) | ❌ | ✅ | ❌ |
+| Version pinning | default branch | commit anchor verified | ✅ `--pin` |
+| Who it's for | people who can set up their own environment | users unfamiliar with the environment | people who need reproducibility |
 
 ## Supported hosts
 
@@ -375,10 +432,10 @@ Installation is **idempotent**: running it repeatedly won't reinstall, it only f
 - **Pin a version** (recommended when you want reproducible behavior):
 
   ```bash
-  git clone --branch v0.2.2 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
+  git clone --branch v0.2.3 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
   ```
 
-  The current latest release is `v0.2.2`. `--branch v0.2.2` pins behavior to that version so it no longer drifts with `main`; `--depth 1` fetches only that version.
+  The current latest release is `v0.2.3`. `--branch v0.2.3` pins behavior to that version so it no longer drifts with `main`; `--depth 1` fetches only that version.
   See [CHANGELOG.md](CHANGELOG.md) for the change log, and [SECURITY.md](SECURITY.md) section 3.4 for why pinning is recommended.
 - **Just adding a pack / skill**: just say "also install the `design` pack" or "add `anthropics-skills`" — no need to redo the whole thing.
 

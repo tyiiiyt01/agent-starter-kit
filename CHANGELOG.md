@@ -28,6 +28,26 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 
 ---
 
+## [0.2.3] - 2026-10-12
+
+> 重新表述「怎么装」：**这个仓库本质上就是一批标准技能，可以像装别的 skill 一样装。**
+
+### Changed
+
+- **README 的「快速开始」重写为三条路径**（此前只讲自定义安装器，把简单事情讲复杂了）。用户提出的质疑是：「我们这不是一个 skill 吗，应该和别的 skill 配置差不多吧」—— 这个质疑成立，核实后确认：
+  - **`npx skills add tyiiiyt01/agent-starter-kit` 实测可用** —— 它识别出全部 17 个技能，装到 `~/.agents/skills/`，再在已装工具的技能目录建链接。本仓的 `skills/<name>/SKILL.md` 布局正好命中标准发现路径
+  - **`gh skill install tyiiiyt01/agent-starter-kit --all --pin <tag|sha>` 也可用**，且原生支持版本固定
+  - 所以 README 现在先说「一行标准命令装技能」，再说「想要 MCP / 依赖 / 自检才需要自定义安装器」
+- **明确写出自定义安装器到底增量在哪**：标准技能安装器（`npx skills` / `gh skill install`）**只管技能**。MCP 注册、Python 依赖、命令行工具、场景预设、自检 —— **没有任何标准机制能做**，因为各宿主的 MCP 配置格式互不相同（JSON / TOML、字典 / 数组表）。新增「三种方式对照」表格说明各自覆盖范围
+- `AGENTS.md` 与 README 顶部的 AI 注释块都加了引导：**先判断用户只要技能还是要连环境一起配**，别默认把每个人推去走完整流程
+- 实测中发现并记录两个使用注意点：`npx skills` **需要 Node ≥ 22.20**；它**用软链接而不是复制** —— 而 Windows 创建软链接需要管理员权限或开发者模式。本仓安装器当初选择「复制」正是为了躲开这一点
+
+### Note
+
+- 顺带验证了一件事：本仓 17 个技能全部满足 Agent Skills 规范的硬性要求（`SKILL.md` 的 `name` 必须与父目录名一致）—— `doctor.py` 一直在校验这条，这次外部标准工具也验证了同样的事实
+
+---
+
 ## [0.2.2] - 2026-10-12
 
 > 新增英文版 README，并修掉一处「文档指向旧版本」的问题。
@@ -173,7 +193,8 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 并在文件末尾补上对应的链接引用。
 -->
 
-[Unreleased]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.1.0...v0.2.0

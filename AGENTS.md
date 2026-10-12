@@ -6,9 +6,23 @@
 
 ## 一、如果用户把本仓库地址发给了你
 
-说明他希望你**在他的机器上**完成安装。你是执行者，不是读者。
+说明他希望**在用户自己的机器上**完成安装。你是执行者，不是读者。
 
-### 执行顺序
+### ⚠️ 先判断用户到底要什么 —— 别默认把每个人推去走完整流程
+
+这个仓库本质上就是**一批标准技能**（`skills/<技能名>/SKILL.md`，17 个，符合 Agent Skills 规范）。所以有三条路径，成本差很多：
+
+| 用户想要 | 你该给的 | 成本 |
+|---|---|---|
+| **只要技能**，自己会配环境 | 一行标准命令：`npx skills add tyiiiyt01/agent-starter-kit`（实测识别全部 17 个技能） | 最低 |
+| **技能 + MCP + 依赖 + 场景预设 + 自检** | 按下面的流程走完整安装 | 中 |
+| **要可复现行为** | `gh skill install tyiiiyt01/agent-starter-kit --all --pin <tag\|sha>`，或用本仓安装器（有 commit 锚点校验） | — |
+
+**关键认知**：标准技能安装器（`npx skills` / `gh skill install`）**只管技能**。MCP 注册、Python 依赖、命令行工具、场景预设、自检 —— **没有任何标准机制能做**，因为各宿主的 MCP 配置格式互不相同（JSON / TOML、字典 / 数组表）。**这才是本仓安装器存在的理由。**
+
+所以：**先问一句用户是想只要技能、还是要连环境一起配好**，别默认走完整流程。
+
+### 执行顺序（仅当用户要完整配置时）
 
 1. **取回仓库到临时目录**
    - 有 git：`git clone --depth 1 https://github.com/tyiiiyt01/agent-starter-kit`（macOS/Linux 用 `/tmp/agent-starter-kit`，Windows 用 `%TEMP%\agent-starter-kit`）
