@@ -307,6 +307,47 @@ def check_skills(hosts: dict, expected_packs: list[str]) -> tuple[bool, list[tup
 
 
 # --------------------------------------------------------------------------
+# 3b. 账本里记录过的技能（含社区技能）
+# --------------------------------------------------------------------------
+def check_state_skills() -> list[tuple[str, bool, str]]:
+    """校验 state.json 里记录过的每一个技能是否还在、是否合法。
+
+    这一条补的是社区技能（--with-community / 默认装的那两个）——
+    它们不属任何能力包的 skills 列表，所以 check_skills 覆盖不到。
+    装完被删、克隆不完整、SKILL.md 缺失，都能在这里被抓出来。
+    """
+    if not STATE_FILE.exists():
+        return []
+    try:
+        state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return [("state.json", False, "账本不是合法 JSON，无法校验已装技能")]
+
+    rows, community = [], []
+    for item in state.get("skills", []):
+        src = item.get("source")
+        if not src:
+            continue  # 自带技能已由 check_skills 校验，不重复
+        community.append(item)
+    for item in community:
+        path = Path(item["path"])
+        if not path.exists():
+            rows.append((item["skill"], False,
+                         f"已记录但目录不存在（可能被删）: {path}"))
+            continue
+        good, msg = validate_skill_dir(path)
+        lic = item.get("license", "未核实")
+        rows.append((f"{item['skill']}（社区）", good,
+                     f"来自 {src_short(item.get('source',''))} · {msg}" + (
+                         f" · 许可证 {lic}" if lic and lic != "未核实" else "")))
+    return rows
+
+
+def src_short(url: str) -> str:
+    return url.replace("https://github.com/", "") if url else "?"
+
+
+# --------------------------------------------------------------------------
 # 4. MCP 注册结果
 # --------------------------------------------------------------------------
 def check_mcp(hosts: dict, expected_packs: list[str]) -> list[tuple[str, bool, str]]:
@@ -420,6 +461,13 @@ def main() -> int:
         print(f"{OK if ok else FAIL} 技能投放 {label}")
         if msg:
             print(f"     {' ' * 8}{msg}")
+
+    state_rows = check_state_skills()
+    if state_rows:
+        print()
+        print("社区技能（账本里记录过的）")
+        for label, ok, msg in state_rows:
+            print(f"{OK if ok else FAIL} {label:<29} {msg}")
 
     print()
     for label, ok, msg in check_mcp(hosts, packs):

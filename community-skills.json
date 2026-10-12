@@ -1,6 +1,6 @@
 {
-  "_note": "社区高星技能清单。可选安装，不在默认路径里 —— 因为技能也不是越多越好。每条 repo 都真实存在，stars 为 GitHub 查询量级；查不到许可证的写「未核实」，不编造。subdirs 是安装程序会逐个克隆后检查 SKILL.md 的子目录；标「已核实」的目录结构我实际读过仓库，其余在 note 里说明。",
-  "_usage": "python3 scripts/apply.py --packs <包> --with-community all   或   --with-community superpowers,pptx",
+  "_note": "社区高星技能清单。标了 default 的默认装（见 _usage）；其余的按需加装。每条 repo 都真实存在，stars 为 GitHub 查询量级；查不到许可证的写「未核实」，不编造。subdirs 是安装程序会逐个克隆后检查 SKILL.md 的子目录；标「已核实」的目录结构我实际读过仓库，其余在 note 里说明。",
+  "_usage": "标了 default 的两个（anthropics-skills / ppt-master）默认就会装。加装其他的：--with-community all（全部 13 个）或 --with-community superpowers,tutor-skills。不想要默认的那两个：--no-community-defaults",
   "_excluded": "未收录 hesreallyhim/awesome-claude-code（~55k）：它是策展索引（README 列表），本身不是 SKILL.md 技能集合，没有可复制的技能目录，装了只会报「没找到子目录」。作为「去哪找技能」的索引仍有价值，但不适合放进安装清单。",
   "skills": [
     {
@@ -10,8 +10,9 @@
       "stars": "~180k",
       "license": "未核实（仓库未提供 SPDX 许可标识）",
       "license_risk": "",
+      "default": true,
       "subdirs": ["skills/docx", "skills/pptx", "skills/xlsx", "skills/pdf"],
-      "note": "本清单里最该推荐的。四个目录结构一致（skills/<name>/SKILL.md），已核实 skills/docx，其余同构；安装时会逐个验证 SKILL.md，缺失自动跳过。"
+      "note": "【默认安装】本清单里最该推荐的。它是自写 office-docs 技能的加强版：官方维护、处理复杂 Word 修订/批注/目录与设计级 PPTX 更可靠。四个目录结构一致（skills/<name>/SKILL.md），已核实 skills/docx，其余同构；安装时会逐个验证 SKILL.md，缺失自动跳过。许可证未标注，如需商用请自行核对上游。"
     },
     {
       "id": "superpowers",
@@ -46,8 +47,9 @@
       "stars": "~61k",
       "license": "MIT",
       "license_risk": "",
+      "default": true,
       "subdirs": ["skills/ppt-master"],
-      "note": "已核实 skills/ppt-master/SKILL.md。技能目录里带 scripts/ 和 templates/，仓库根有 requirements.txt，需要 Python 环境；重排版/动画的部分依赖较多，装前看清依赖。"
+      "note": "【默认安装】补上 python-pptx 做不出来的那一块 —— 设计级 PPT。python-pptx 只能摆结构（文本框、图片、位置），做不出设计；要「精美 PPT」得靠它。已核实 skills/ppt-master/SKILL.md。技能目录里带 scripts/ 和 templates/，仓库根有 requirements.txt，需要 Python 环境；重排版/动画的部分依赖较多，装前看清依赖。"
     },
     {
       "id": "mathmodeling-skills",

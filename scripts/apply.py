@@ -685,16 +685,18 @@ def render_plan(skills, mcps, py_deps, cli_deps, packs, pack_names, python_exe, 
         L.append("")
 
     if community:
-        L.append("【社区高星技能】额外安装（从 GitHub 克隆）")
+        L.append("【社区高星技能】从 GitHub 克隆后投放")
         seen_c = set()
         for a in community:
             e = a["entry"]
             if e["id"] in seen_c:
                 continue
             seen_c.add(e["id"])
-            L.append(f"  + {e['id']:<22}{e.get('what', '')}")
+            tag = "（默认）" if e.get("default") else ""
+            L.append(f"  + {e['id']:<22}{tag}{e.get('what', '')}")
             if e.get("license_risk"):
                 L.append(f"    ⚠ 许可证 {e.get('license', '未核实')}：{e['license_risk']}")
+        L.append("  标「默认」的属于基础能力补充；不想要可以加 --no-community-defaults")
         L.append("")
 
     if mirrors:
@@ -763,7 +765,10 @@ def main() -> int:
     ap.add_argument("--minimal-mcp", action="store_true",
                     help="只装标记 essential 的 MCP。MCP 很吃上下文，装多了 agent 会变笨")
     ap.add_argument("--with-community", nargs="?", const="all", default="",
-                    help="额外装社区高星技能。传 'all' 装全部，或传逗号分隔的 id")
+                    help="额外装社区高星技能。传 'all' 装全部，或传逗号分隔的 id。"
+                         "标了 default 的（ppt-master / anthropics-skills）本来就是默认装的")
+    ap.add_argument("--no-community-defaults", action="store_true",
+                    help="不装默认社区技能。默认会装 community-skills.json 里标了 default 的那几个")
     ap.add_argument("--gh-proxy", default="auto",
                     help="GitHub 加速前缀。'auto' 多路回退，'' 只用直连，或指定单个镜像")
     ap.add_argument("--no-mirrors", action="store_true", help="不生成 mirrors.env（国内加速环境变量）")
@@ -836,9 +841,22 @@ def main() -> int:
     try:
         skills = plan_skills(pack_names, packs, target_hosts, args.skill_dir)
         mcps = plan_mcp(pack_names, packs, target_hosts, minimal=args.minimal_mcp)
-        only = [] if args.with_community in ("", "all") else [x.strip() for x in args.with_community.split(",")]
-        community = (plan_community(load_community(), only, target_hosts, args.skill_dir)
-                     if args.with_community else [])
+
+        # 社区技能：标了 default 的默认装（如 ppt-master / anthropics-skills），
+        # 其余的靠 --with-community 点名。技能只加载 description，比 MCP 便宜得多，
+        # 所以默认装几个高价值的划算。
+        entries = load_community()
+        selected: list[str] = []
+        if not args.no_community_defaults:
+            selected += [e["id"] for e in entries if e.get("default")]
+        if args.with_community:
+            if args.with_community == "all":
+                selected = [e["id"] for e in entries]
+            else:
+                selected += [x.strip() for x in args.with_community.split(",") if x.strip()]
+        selected = list(dict.fromkeys(selected))
+        community = (plan_community(entries, selected, target_hosts, args.skill_dir)
+                     if selected else [])
     except AmbiguousSkillsDir as exc:
         print(f"[!] {exc.host} 上找到多个候选技能目录，无法自动决定：")
         for c in exc.candidates:

@@ -24,7 +24,18 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 
 ## [Unreleased]
 
-> 尚无新变更。下一个版本的改动会记在这里。
+### Added
+
+- **`ppt-master` 与 `anthropics-skills` 改为默认安装** —— 补的是基础能力的两个短板：前者做设计级 PPT（`python-pptx` 只能摆结构），后者是官方文档四件套，处理复杂 Word 修订/批注/目录与设计级 PPTX 更可靠。不想要可加 `--no-community-defaults`
+  - ⚠️ 实测 `ppt-master` 技能目录约 **78 MB**（社区资料里常写 18M，偏小），默认装意味着一次较大的克隆
+- `apply.py --no-community-defaults`：关掉默认社区技能
+- `doctor.py` 新增社区技能校验：按账本逐条复核，能抓出"装完被删""克隆不完整""SKILL.md 缺失"（此前只管能力包自带的技能，社区技能装失败不会报）
+- README 重写介绍部分：用人话解释「技能 / MCP / 依赖」三个术语，新增「它到底做了什么」（具体人类场景 + 诚实边界）与「它不做什么」，合并原先重复的边界说明
+- `skills/office-docs` 扩充到 197 行，补入实测配方与踩坑：`rPr` 为 `None` 导致的崩溃、`w:eastAsia` 字体槽位、三线表 XML、A4 页面设置、Excel 条件格式/图表、能力边界表
+
+### Fixed
+
+- `skills/office-docs` 两处照抄即报错的示例：`PPt` 应为 `Pt`；`doc.add_run().add_picture(...)` 应为 `doc.add_paragraph().add_run().add_picture(...)`
 
 ---
 

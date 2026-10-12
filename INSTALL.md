@@ -158,18 +158,28 @@ LibreOffice 这类重装项，检测到就用，没有就给引导，**不要让
   它只装每个包标记为 `essential` 的那一个 MCP
 - ⚠️ 反过来，**不要主动给用户加装 MCP**。用户说"能不能再强一点"时，先问具体想做什么，再判断是否真需要新 MCP
 
-### 社区高星技能（可选，别默认装）
+### 社区高星技能
 
-`community-skills.json` 里有一份社区高星技能清单（含官方 `anthropics/skills` 的 docx/pptx/xlsx/pdf 四件套、`obra/superpowers` 等），带 star 数、许可证和坑的说明。
+`community-skills.json` 里有一份社区高星技能清单（带 star 数、许可证和坑的说明）。
 
-**默认不装**，理由同上 —— 技能也不是越多越好。用户主动说"我听说有个 xx skill"或想要更强能力时：
+**其中两个是默认装的**（在清单里标了 `default: true`）：
+
+| 默认装的 | 为什么默认 |
+|---|---|
+| `anthropics-skills` | Anthropic 官方四件套（docx/pptx/xlsx/pdf）。补的是**复杂文档**能力 —— Word 修订/批注/目录、设计级 PPTX，比自写的 `office-docs` 更可靠 |
+| `ppt-master` | 补的是**设计**能力。`python-pptx` 只能摆结构，做不出设计；要"精美 PPT"得靠它 |
+
+**其余的默认不装** —— 技能也不是越多越好。用户主动说"我听说有个 xx skill"或想要更强能力时：
 
 ```bash
-python3 scripts/apply.py --packs <包> --with-community all
-python3 scripts/apply.py --packs <包> --with-community superpowers,anthropics-skills
+python3 scripts/apply.py --packs <包> --with-community all              # 全部 13 个
+python3 scripts/apply.py --packs <包> --with-community superpowers      # 点名加装
+python3 scripts/apply.py --packs <包> --no-community-defaults           # 连默认那两个也不要
 ```
 
 ⚠️ 装之前**把许可证风险念给用户听**（清单里有 `license_risk` 字段，AGPL 之类的再分发受限，要说明）。
+
+⚠️ 默认装的两个需要**从 GitHub 克隆**（`ppt-master` 仓库较大）。国内网络下会走 `--gh-proxy auto` 的多路回退；如果全部镜像都不通，`apply.py` 会如实报告失败并继续装其他东西，**不会卡住整个流程**。用户不想要这个下载也可以加 `--no-community-defaults`。
 
 ---
 
