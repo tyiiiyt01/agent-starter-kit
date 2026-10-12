@@ -6,11 +6,26 @@
 [![Hosts](https://img.shields.io/badge/%E5%AE%BF%E4%B8%BB-6%20%E7%A7%8D-brightgreen.svg)](#支持哪些宿主)
 [![Stars](https://img.shields.io/github/stars/tyiiiyt01/agent-starter-kit)](https://github.com/tyiiiyt01/agent-starter-kit)
 
-> 🤖 **如果你是 AI 助手**：用户把本仓库地址发给你，是希望你在他的机器上完成安装。
-> 请先读 [`AGENTS.md`](AGENTS.md)（行为约束），再按 [`INSTALL.md`](INSTALL.md)（执行手册）操作。
-> 只想要一份文件索引的话，直接读 [`llms.txt`](llms.txt)。
->
-> 👤 人类读者直接往下看即可 —— 你不需要懂命令行。
+<!--
+  ────────────────────────────────────────────────────────────────────────
+  给 AI 助手（这段是 HTML 注释，GitHub 渲染时不显示，但在原始 Markdown 里可见）
+
+  用户把本仓库地址发给你，是希望你在他的机器上完成安装。你是执行者。
+
+  执行顺序：
+    1. 取回仓库到临时目录（clone --depth 1；国内慢就加 gh-proxy.com 前缀）
+    2. 读 AGENTS.md —— 行为约束与入口
+    3. 读 INSTALL.md —— 执行手册，按 Step 0 ~ Step 6 走，不要跳
+    4. 装完跑 doctor.py 自检，并主动问用户要不要给项目生成 AGENTS.md
+
+  其他可读文件：llms.txt（文件索引）· hosts.json（宿主适配表）
+              · presets.json（场景预设）· packs/SCHEMA.md（能力包格式）
+
+  硬约束（完整版见 AGENTS.md）：唯一硬前置是 Python 3；装前必须 dry-run
+  让用户确认；不写系统级配置、不用管理员权限；不改 skills/ 里技能文件内容；
+  不主动加装 MCP；不绕过 apply.py 的退出码 3 / 4 守卫。
+  ────────────────────────────────────────────────────────────────────────
+-->
 
 > **Python 版本说明**：3.8+ 都能跑。但如果你用的是 **Reasonix 或 Codex**，要让安装器自动写它们的 TOML 配置，需要 Python **3.11+**（标准库 `tomllib`）并装上 [`requirements.txt`](requirements.txt) 里的依赖；否则这两个宿主的 MCP 会降级成「给你一段配置手动粘贴」。
 
@@ -77,6 +92,17 @@ $ https://github.com/tyiiiyt01/agent-starter-kit
 3. 助手会自己探测环境、匹配场景、打印清单；**你回复确认**它才动手，装完再跑一遍自检，告诉你哪些能力现在可用
 
 > 你不需要懂命令行，它会引导你。最后它还会问：**要不要给当前项目生成一个 `AGENTS.md`** —— 建议答应，这是新手最该配的一项，能让 AI 记住你的项目约定，省得每次重复交代。
+
+**它会在仓库里读这几个文件来干活**（你的助手自己去读，你不用管）：
+
+| 文件 | 干什么的 |
+|---|---|
+| [`AGENTS.md`](AGENTS.md) | 行为约束 —— 它被允许做什么、禁止做什么 |
+| [`INSTALL.md`](INSTALL.md) | 执行手册，Step 0 → Step 6 |
+| [`llms.txt`](llms.txt) | 文件索引 —— 一页看清整个仓库该看哪些文件 |
+| [`hosts.json`](hosts.json) · [`presets.json`](presets.json) | 宿主适配表 · 场景预设 |
+
+> 想核对它会做什么，打开上面任意一个文件都能自己看 —— 全是明文，没有隐藏逻辑。
 
 ### ② 我想自己挑
 
@@ -286,11 +312,11 @@ python3 scripts/apply.py --packs code --with-community all
 
 ```
 agent-starter-kit/
-├── README.md             ← 你正在看的（给人看）
-├── AGENTS.md             ← 给 AI 看：行为约束与入口（agent 会自动读这个文件）
-├── INSTALL.md            ← 给 AI 看：执行手册（Step 0–6）
-├── llms.txt              ← 给 AI 看：文件索引（llms.txt 约定，只读地图）
-├── uninstall.md          ← 给 AI 看：卸载指引
+├── README.md             ← 你正在看的
+├── AGENTS.md             ← 助手的行为约束（它会自动读这个文件）
+├── INSTALL.md            ← 执行手册（Step 0–6），助手照这个走
+├── llms.txt              ← 文件索引，方便助手一页看懂整个仓库
+├── uninstall.md          ← 卸载指引
 ├── SECURITY.md           ← 安全披露政策与本项目的风险边界
 ├── CHANGELOG.md          ← 版本变更记录
 ├── LICENSE               ← Apache-2.0
