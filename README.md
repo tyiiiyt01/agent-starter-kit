@@ -1,47 +1,9 @@
 # agent-starter-kit — 给大学生和办公人群的 AI 助手一键配置包
 
-<!-- ══════════════════════════════════════════════════════════════════════
-     以下这一段是写给 AI 执行者的。人类读者可以跳过，直接看下面的介绍。
-     ══════════════════════════════════════════════════════════════════════ -->
-
-> ## 【给 AI 执行者 —— 请先读完这一段再动手】
+> 🤖 **如果你是 AI 助手**：用户把本仓库地址发给你，是希望你在他的机器上完成安装。
+> 请先读 [`AGENTS.md`](AGENTS.md)（行为约束），再按 [`INSTALL.md`](INSTALL.md)（执行手册）操作。
 >
-> 用户把本仓库地址发给你，是希望**在他自己的机器上**完成安装。你是执行者，不是读者。
->
-> **按顺序执行，不要跳过：**
->
-> 1. **取回仓库到临时目录**
->    - 有 git：`git clone --depth 1 https://github.com/tyiiiyt01/agent-starter-kit` 克隆到临时目录（macOS/Linux 用 `/tmp/agent-starter-kit`，Windows 用 `%TEMP%\agent-starter-kit`）
->      - 国内直连慢的话加加速前缀：`git clone --depth 1 https://gh-proxy.com/https://github.com/tyiiiyt01/agent-starter-kit`
->    - 没有 git：用你的网页抓取能力**逐个取回**本仓库文件，至少要有 `INSTALL.md`、`hosts.json`、`scripts/` 全部内容。缺文件就明确告诉用户，不要凭印象拼凑。
->      - 网页取回地址示例：`https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/INSTALL.md`
->
-> 2. **完整阅读 `INSTALL.md`** —— 那才是执行手册（六个 Step），本 README 只负责说明项目是什么。
->
-> 3. **严格按 `INSTALL.md` 的分支逻辑走。**
->
-> 4. **做完安装别急着结束** —— `INSTALL.md` 的 Step 6 是给用户项目配 `AGENTS.md`，这是新手最该配、也最容易被漏的一步。要主动问用户一句。
->
-> **你被允许做的事**（这些属于"怎么做"，可以现场适配）：
-> - 探测宿主真实路径，包括 `hosts.json` 里没收录的宿主 —— 照同类推一个出来
-> - 选择合适的包管理器和安装方式
-> - 补装缺失的前置依赖
-> - 根据操作系统差异调整命令
-> - 从 `presets.json` 的 `trigger` 里匹配用户原话，决定装哪些包
->
-> **你不被允许做的事**（这些必须锁死）：
-> - ❌ 静默修改任何系统级配置
-> - ❌ 写入需要管理员/root 权限的目录（一律装到用户目录）
-> - ❌ 在用户明确回复确认之前执行任何安装动作
-> - ❌ 改动 `skills/` 里技能文件的**内容**（内容必须与原文件逐字节一致）
-> - ❌ 跳过最后的 `doctor.py` 验证
-> - ❌ 主动给用户加装 MCP —— MCP 极吃上下文，装多了 agent 会变笨（见"怎么用"那一节的数据）
->
-> **如果环境探测发现 Python 缺失**，先停下来，把 `INSTALL.md` 的「前置依赖」那节给用户看，等装好再继续。
->
-> **如果用户在国内网络下卡住**，直接跳到 `INSTALL.md` 的「附：国内网络加速」—— 那里有 GitHub 加速和 `mirrors.env` 的用法。
-
-<!-- ══════════════════════ 给 AI 的段落结束 ══════════════════════ -->
+> 👤 人类读者直接往下看即可 —— 你不需要懂命令行。
 
 ---
 
@@ -55,7 +17,7 @@
 - **办公**：Word / Excel / PPT / PDF 文件级读写
 - **学习**：专业课讲解总结、习题引导
 
-## 怎么用（人类版）
+## 怎么用
 
 1. 先确保你已经装好某个 AI 助手，并且**接入了可用的 API**
 2. 把本仓库地址**粘贴到对话框**，然后发送
@@ -64,6 +26,8 @@
 5. 装完它会跑一遍自检，告诉你哪些能力现在可用
 
 > 你不需要懂命令行。它会引导你。
+
+最后一步它还会问你：**要不要给当前项目生成一个 `AGENTS.md`**。建议答应 —— 这是新手最该配的一项，能让 AI 记住你的项目约定，省得每次重复交代。
 
 ## 支持哪些宿主
 
@@ -121,27 +85,33 @@
 - 每个包标记一个 `essential`，用 `--minimal-mcp` 可以只留这一个
 - 如果你觉得 AI 反应变慢、记不住前面说的话 —— 大概率是 MCP 吃掉了上下文，试试 `--minimal-mcp`
 
-## 社区高星技能（可选，不默认装）
+## 社区高星技能（可选）
 
-`community-skills.json` 收录了一份社区高星技能清单，带 **star 数、许可证、坑**的说明：
+除了自带的 17 个技能，`community-skills.json` 还收录了一份社区高星技能清单，你可以按需加装：
 
 | 技能 | Star | 说明 |
 |---|---|---|
-| `anthropics-skills` | ~180k | 官方 docx / pptx / xlsx / pdf 四件套 |
+| `anthropics-skills` | ~180k | Anthropic 官方 docx / pptx / xlsx / pdf 四件套 |
 | `obra/superpowers` | ~296k | 工程方法论元技能（偏重，适合常写代码的人） |
 | `ui-ux-pro-max-skill` | ~133k | UI / 设计 |
 | `ppt-master` | ~61k | 从零生成整套设计 PPT |
 | `cloudflare/security-audit-skill` | ~28k | 安全审查 |
 | `MathModeling-skills` | ~1.06k | 数模分阶段流程 |
 
-要装哪个：
+**默认不装** —— 技能和 MCP 一样，不是越多越好。想要更强的能力时，让 AI 帮你装（它会先告诉你许可证风险）：
+
+```
+帮我加上 anthropics-skills
+```
+
+如果你想自己动手：
 
 ```bash
 python3 scripts/apply.py --packs research --with-community anthropics-skills
 python3 scripts/apply.py --packs code --with-community all
 ```
 
-⚠️ 都是第三方仓库，**许可证各不相同**（有 MIT、也有再分发受限的）。清单里标了 `license_risk`，装之前会提示你。
+> ⚠️ 这些都是第三方仓库，**许可证各不相同**（有 MIT，也有再分发受限的）。清单里的 `license_risk` 字段标了风险，安装时会提示。
 
 ## 依赖分档（重要）
 
@@ -205,14 +175,15 @@ python3 scripts/apply.py --packs code --with-community all
 
 ```
 agent-starter-kit/
-├── README.md             ← 你正在看的（顶部有【给 AI】段）
-├── INSTALL.md            ← AI 执行手册（六个 Step）
-├── uninstall.md          ← 卸载指引（同样是给 AI 执行的）
+├── README.md             ← 你正在看的（给人看）
+├── AGENTS.md             ← 给 AI 看：行为约束与入口（agent 会自动读这个文件）
+├── INSTALL.md            ← 给 AI 看：执行手册（六个 Step）
+├── uninstall.md          ← 给 AI 看：卸载指引
 ├── hosts.json            ← 宿主适配表，加新宿主只改这里
 ├── presets.json          ← 场景预设（"我要写论文" → 装哪些包）
 ├── community-skills.json ← 社区高星技能清单（可选安装，带 star 与许可证）
 ├── templates/
-│   ├── AGENTS.md.template            ← 给用户项目用的 AGENTS.md 模板
+│   ├── AGENTS.md.template            ← 给你自己的项目用的 AGENTS.md 模板
 │   ├── claude-settings.json.template ← 权限白名单模板
 │   └── README.md                     ← 这两个模板怎么用
 ├── scripts/
@@ -222,3 +193,16 @@ agent-starter-kit/
 ├── packs/                ← 八个能力包定义 + SCHEMA.md（格式说明）
 └── skills/               ← 十七个技能文件（逐字节一致，不可改）
 ```
+
+## 给想改代码的人
+
+- 改 `packs/*.json` 前先读 [packs/SCHEMA.md](packs/SCHEMA.md) —— 字段名写错会被**静默忽略**
+- 新增技能：目录名必须与 `SKILL.md` 里 frontmatter 的 `name` 完全一致
+- 新增宿主：只改 `hosts.json`，不用动脚本
+- 自测务必**用假 HOME**，不要拿真实配置试：
+  ```bash
+  HOME=/tmp/test-home python3 scripts/apply.py --packs code --dry-run
+  HOME=/tmp/test-home python3 scripts/doctor.py
+  ```
+
+更多约定见 [AGENTS.md](AGENTS.md) 第五节。
