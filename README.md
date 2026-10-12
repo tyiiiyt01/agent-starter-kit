@@ -221,17 +221,46 @@ $ https://github.com/tyiiiyt01/agent-starter-kit
 | `cloudflare/security-audit-skill` | ~28k | 安全审查 |
 | `MathModeling-skills` | ~1.06k | 数模分阶段流程 |
 
-其中 `anthropics-skills` 和 `ppt-master` 是**默认就装**的 —— 它们补的是基础能力的短板：
+**默认一个都不装** —— 这是刻意的。社区技能是第三方仓库，有三个不能忽视的问题：
 
-- **`anthropics-skills`**（官方四件套）补的是"复杂文档"：Word 的修订/批注/目录、设计级 PPTX，比本套件自写的技能更可靠
-- **`ppt-master`** 补的是"设计"：`python-pptx` 只能摆结构（文本框、图片、位置），**做不出设计**；要「精美 PPT」得靠它
+| 问题 | 例子 |
+|---|---|
+| **许可约束** | `anthropics/skills` 是**专有许可**，明令禁止提取/复制/衍生/分发 |
+| **来源存疑** | `ppt-master` 2025-12 建仓即约 6 万 star，增长曲线不合常理 |
+| **体积过大** | `ppt-master` 实测技能目录约 **78MB** |
 
-其余的默认不装 —— 技能和 MCP 一样，不是越多越好。想要更强的能力时，直接对助手说 `帮我加上 superpowers`（它会先告诉你许可证风险）；想自己动手则运行：
+都不适合作为"默认信任"的对象。想要时点名装：
 
 ```bash
+python3 scripts/apply.py --packs code --with-community ppt-master   # 点名一个
 python3 scripts/apply.py --packs code --with-community all          # 全部 13 个
-python3 scripts/apply.py --packs code --with-community superpowers  # 点名
-python3 scripts/apply.py --packs code --no-community-defaults       # 连默认那两个也不要
+```
+
+装上之后，每一项都有三道保护：
+
+1. **版本固定** —— 每个条目带 `commit` 锚点，clone 后校验，**不符即中止**
+   （git 自己的校验挡不住镜像替换内容，只有比对锚点才能）
+2. **可执行代码会被列出来** —— 报告里会说"含 N 个可执行脚本"，并把命中高风险模式的
+   项（curl 管道执行、触碰密钥路径、硬编码 IP 外联）列给你看
+3. **不替第三方背书** —— **本套件只做版本固定与模式扫描，没有做代码审计**。扫描没命中不等于安全
+
+> ⚠️ 这也意味着：`--with-community` 装的东西，装之前最好自己过一眼仓库。这是下载别人的代码，
+> 和装系统自带的包不是一回事。
+
+## 装不上的工具，会给官方下载入口
+
+有些东西 AI 装不了 —— MATLAB（要授权）、需要管理员权限的（Xcode CLT、MSVC、LibreOffice）、
+体积巨大的（TeX Live）。这时套件不会含糊地说"你自己去装"，而是从 [`manual-installs.json`](manual-installs.json)
+里取**官方下载页、各平台安装命令、验证方法**给你。
+
+已收录 17 个工具，包括 Python / Git / Node / uv / MATLAB / Octave / LibreOffice / TeX / pandoc / ffmpeg / Zotero 等。
+以 MATLAB 为例，你会拿到的不只是网址：
+
+```
+官方下载：https://www.mathworks.com/downloads/
+国内站（更快）：https://www.mathworks.cn/downloads/
+先确认你们学校有没有买授权 → 用学校邮箱注册，访问 mathworks.com/academia 查 Campus-Wide 许可
+没有授权也不要紧 → 先用 GNU Octave（免费，语法高度兼容）：https://octave.org/download
 ```
 
 > ⚠️ 这些都是第三方仓库，**许可证各不相同**（有 MIT，也有再分发受限的）。清单里的 `license_risk` 字段标了风险，安装时会提示。

@@ -1,0 +1,396 @@
+{
+  "_note": "人工安装指引表。给【装不了的东西】兜底：需要授权/图形界面/管理员权限/体积巨大，AI 只能把官方下载页和步骤递给用户，由用户自己动手。本文件是数据不是脚本 —— scripts/ 不读它，读它的是 AI 助手（在你粘贴仓库地址后替你规划安装时）。所有 URL 均为官方域名，一个第三方下载站都没有。",
+  "_usage": "agent 遇到 installs 里自动装失败、或工具标记 requires_admin=true 时，从这里取该工具条目，把 official_url 和 install 里对应本机 OS 的命令原样交给用户，并带上 fallback_install 与 notes。不要替用户跑 sudo/管理员命令，也不要跳转到任何非 official_url 的站点。tier=heavy 的坚决不自动装（GB 级）。china_notes 是给大陆网络环境下的加速方案。",
+  "_conventions": {
+    "_note": "这里是【约定说明】，非配置项，改文件的人（或 agent）看规矩用。",
+    "official_url": "一律官方域名，不给第三方下载站、镜像站或博客",
+    "tier": "light <100MB / medium 100MB-1GB / heavy >1GB",
+    "requires_admin": "true 表示安装时需要管理员/root 权限 —— 本项目承诺不用管理员权限，所以这类只能引导用户自己做；标 false 的工具如有说明，代表可走 portable/zip 版免管理员",
+    "verified": "true 表示命令/URL 已核对；notes 里出现【未核实】字样即代表该项未经真机确认，必须由用户或 agent 现场确认"
+  },
+
+  "tools": [
+    {
+      "id": "python",
+      "name": "Python 3",
+      "why": "几乎所有 AI 技能和数据处理脚本的地基，装了它助手才有“手”去算数、转表格、抓网页。",
+      "essential": true,
+      "tier": "light",
+      "requires_admin": false,
+      "official_url": "https://www.python.org/downloads/",
+      "install": {
+        "darwin": "brew install python@3.13",
+        "win32": "winget install -e --id Python.Python.3.13",
+        "linux": "sudo apt install python3 python3-pip"
+      },
+      "fallback_install": "从官网下载安装器逐屏安装；Windows 安装首屏务必勾选 Add python.exe to PATH，否则命令行里敲 python 找不到。",
+      "verify": {"cmd": "python3 -V", "expect": "Python 3.x.x"},
+      "notes": [
+        "Windows 的【微软商店 stub 陷阱】：系统自带一个占位 python.exe，敲 python 会跳转微软商店而不是真解释器 —— 装完真 Python 后仍可能中招，用 py -V 验证更可靠。",
+        "Windows 安装器一定勾 Add python.exe to PATH，否则 python/pip 命令全都不可用。",
+        "macOS 用 Homebrew 装的是 python3（不带 Python 2 那个老 python），命令名统一写 python3。"
+      ],
+      "china_notes": "pip 换清华源：pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple"
+    },
+    {
+      "id": "git",
+      "name": "Git",
+      "why": "拉取 GitHub 上的技能包、给助手更新版本全靠它，也是学生交作业、协作代码的标配。",
+      "essential": true,
+      "tier": "light",
+      "requires_admin": false,
+      "official_url": "https://git-scm.com/downloads",
+      "install": {
+        "darwin": "brew install git",
+        "win32": "winget install -e --id Git.Git",
+        "linux": "多数发行版已预装；未装时 sudo apt install git"
+      },
+      "fallback_install": "从官网下载对应系统安装器逐屏安装；Windows 一路默认即可（默认已含把 git 加入 PATH）。",
+      "verify": {"cmd": "git --version", "expect": "git version 2.x.x"},
+      "notes": [
+        "macOS 首次运行 git 会触发 Xcode 命令行工具安装弹窗，属正常现象。",
+        "Windows 的 git-bash 与系统 cmd 是两套终端，PATH 里能敲到 git 一般就无碍。"
+      ],
+      "china_notes": "GitHub 克隆慢可给 git 配代理，或用 gh-proxy.com 前缀下载 release：https://gh-proxy.com/https://github.com/<owner>/<repo>/..."
+    },
+    {
+      "id": "node",
+      "name": "Node.js LTS",
+      "why": "跑不少前端类技能、文档渲染工具的运行时（npm/npx 生态），装它才能用上那批 JS 写的工具。",
+      "essential": false,
+      "tier": "light",
+      "requires_admin": false,
+      "official_url": "https://nodejs.org/zh-cn/download",
+      "install": {
+        "darwin": "brew install node",
+        "win32": "winget install -e --id OpenJS.NodeJS.LTS",
+        "linux": "sudo apt install nodejs npm"
+      },
+      "fallback_install": "官网下载 LTS 安装器；Windows 若不想用管理员权限，改下 .zip 免安装版，解压后把目录里的 bin 加进 PATH。",
+      "verify": {"cmd": "node -v", "expect": "v20.x.x 或 v22.x.x（LTS 版本号）"},
+      "notes": [
+        "Windows 的 MSI 安装器默认 per-machine 安装，需要管理员权限；免管理员的办法是用官网 .zip 版，手动解压 + 配 PATH。",
+        "npm -v 也要顺手验证，很多工具走 npx 调用。"
+      ],
+      "china_notes": "npm 换 npmmirror 镜像：npm config set registry https://registry.npmmirror.com"
+    },
+    {
+      "id": "uv",
+      "name": "uv",
+      "why": "超快的 Python 包与环境管理器，让助手几句命令就装好依赖，不必跟 pip 卡半天。",
+      "essential": false,
+      "tier": "light",
+      "requires_admin": false,
+      "official_url": "https://docs.astral.sh/uv/",
+      "install": {
+        "darwin": "brew install uv",
+        "win32": "winget install -e --id astral-sh.uv",
+        "linux": "curl -LsSf https://astral.sh/uv/install.sh | sh"
+      },
+      "fallback_install": "官网文档页有各系统一键脚本；Linux/macOS 的安装脚本会把 uv 装到 ~/.local/bin，注意该目录要在 PATH 里。",
+      "verify": {"cmd": "uv --version", "expect": "uv 0.x.x"},
+      "notes": [
+        "Linux 安装脚本方式装完可能需要重开终端或 source ~/.bashrc，PATH 才生效。",
+        "uv 可替代 pip/venv，但两者可共存，不会互相破坏。"
+      ],
+      "china_notes": "uv 走 PyPI，同样可用清华源加速：export UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple"
+    },
+    {
+      "id": "xcode-clt",
+      "name": "Xcode Command Line Tools",
+      "why": "macOS 上编译类工具（装 Homebrew 包、跑 C/C++ 依赖）的底层前提，没有它很多 brew 安装会失败。",
+      "essential": false,
+      "tier": "heavy",
+      "requires_admin": true,
+      "official_url": "https://developer.apple.com/xcode/resources/",
+      "install": {
+        "darwin": "xcode-select --install"
+      },
+      "fallback_install": "在终端敲 xcode-select --install 后会弹出图形安装向导，需用户手动点“安装”并等待下载（数 GB），请引导用户完成。",
+      "verify": {"cmd": "xcode-select -p", "expect": "/Library/Developer/CommandLineTools"},
+      "notes": [
+        "只有 macOS 有此工具，Windows/Linux 无对应项。",
+        "安装走弹窗图形界面 + 管理员授权，AI 无法代劳，只能给命令并提示用户点确认。",
+        "体积较大（数 GB），下载慢属正常。"
+      ],
+      "china_notes": "安装包从苹果官方 CDN 下载，无镜像；网络慢时建议换时段重试。"
+    },
+    {
+      "id": "msvc-build-tools",
+      "name": "MSVC Build Tools（Visual Studio 生成工具）",
+      "why": "Windows 上编译原生扩展（部分 Python 包的 C 依赖、C/C++ 项目）必需，缺了会报 “Microsoft Visual C++ 14.0 or greater is required”。",
+      "essential": false,
+      "tier": "heavy",
+      "requires_admin": true,
+      "official_url": "https://visualstudio.microsoft.com/downloads/",
+      "install": {
+        "win32": "winget install -e --id Microsoft.VisualStudio.2022.BuildTools"
+      },
+      "fallback_install": "从官网下载 Build Tools 安装器；安装时必须在工作负载里勾选“使用 C++ 的桌面开发”，否则装完仍没有 cl.exe。",
+      "verify": {"cmd": "cl /?", "expect": "Microsoft (R) C/C++ Optimizing Compiler"},
+      "notes": [
+        "只有 Windows 有此工具。",
+        "winget 拉起的是安装器，装完仍需在图形安装器里勾选 C++ 工作负载 —— 这一步 AI 无法代做。",
+        "体积很大（数 GB），且需要管理员权限，务必引导用户自行安装。"
+      ],
+      "china_notes": "VS 安装器走微软官方 CDN，无镜像；下载慢时可在安装器设置里改用国内 CDN 选项或换时段。"
+    },
+    {
+      "id": "msys2",
+      "name": "MSYS2 / MinGW-w64",
+      "why": "给 Windows 补一套类 Unix 的编译环境与 GCC/G++，让 g++、make 这类工具在 Windows 上可用。",
+      "essential": false,
+      "tier": "heavy",
+      "requires_admin": true,
+      "official_url": "https://www.msys2.org/",
+      "install": {
+        "win32": "winget install -e --id MSYS2.MSYS2  然后在该终端的 UCRT64 里执行 pacman -S mingw-w64-ucrt-x86_64-gcc"
+      },
+      "fallback_install": "从官网下载安装器逐屏安装；装完打开 MSYS2 UCRT64 终端，再跑 pacman -S mingw-w64-ucrt-x86_64-gcc 装编译器。",
+      "verify": {"cmd": "g++ --version", "expect": "g++ (Rev..., Built by MSYS2 project) 13.x.x 或更高"},
+      "notes": [
+        "只有 Windows 有此工具。",
+        "装 MSYS2 本体需要管理员权限；装完务必用 UCRT64 终端执行 pacman，否则 g++ 装不进正确前缀。",
+        "要长期在普通 cmd/PowerShell 里用 g++，需把 msys2 的 mingw64/bin 加进系统 PATH。",
+        "winget 装完不会自动配 PATH，属正常。"
+      ],
+      "china_notes": "pacman 可换国内源：编辑 /etc/pacman.d/mirrorlist 优先选清华 TUNA 的 msys2 镜像。"
+    },
+    {
+      "id": "matlab",
+      "name": "MATLAB",
+      "why": "数模竞赛、信号处理、控制理论课程的主力工具 —— 需要学校许可证，AI 无法代装。",
+      "essential": false,
+      "tier": "heavy",
+      "requires_admin": true,
+      "official_url": "https://www.mathworks.com/downloads/",
+      "install": {
+        "_note": "AI 装不了：MATLAB 是付费商业软件，需 MathWorks 账号 + 学校/机构许可证，全程在官网图形界面完成，无法用命令行自动安装。",
+        "official_url_cn": "https://www.mathworks.cn/downloads/"
+      },
+      "fallback_install": "①用学校邮箱在 mathworks.com 注册账号；②访问 https://www.mathworks.com/academia 确认本校是否有 Campus-Wide 校园许可；③在 Downloads 页按许可证下载安装器并安装。",
+      "verify": {"cmd": "matlab -batch \"version\"", "expect": "MATLAB Version: 2x.x (R20xx...)"},
+      "notes": [
+        "明确标注：AI 装不了。必须由用户本人凭学校许可证下载安装。",
+        "若学校无校园许可，可考虑改用 GNU Octave（语法高度兼容，免费）。",
+        "安装体积很大（数 GB），且需要管理员权限。",
+        "中国站 https://www.mathworks.cn/downloads/ 与主站内容一致，网络友好时可走中国站。"
+      ],
+      "china_notes": "MathWorks 中国站 https://www.mathworks.cn 下载更快；校园许可获取路径也支持中国区账号。"
+    },
+    {
+      "id": "octave",
+      "name": "GNU Octave",
+      "why": "免费开源的 MATLAB 替代品，语法基本兼容，没买 MATLAB 也能跑大部分数模/矩阵运算脚本。",
+      "essential": false,
+      "tier": "medium",
+      "requires_admin": true,
+      "official_url": "https://octave.org/download",
+      "install": {
+        "darwin": "brew install octave",
+        "win32": "winget install -e --id GNU.Octave",
+        "linux": "sudo apt install octave"
+      },
+      "fallback_install": "官网下载页有各系统安装器；Windows 也提供便携版可免管理员。",
+      "verify": {"cmd": "octave --version", "expect": "GNU Octave, version 9.x.x"},
+      "notes": [
+        "requires_admin 特指 Windows：MSI 装到 Program Files 需管理员；macOS 的 brew 与 Linux 的 apt 在 usr 本地安装通常不需要额外提权。",
+        "与 MATLAB 语法高度兼容但不 100% 一致，个别工具箱函数需替换。"
+      ],
+      "china_notes": "Linux 的 apt 可换国内源；Windows 官网安装器走官方 CDN，慢时换时段。"
+    },
+    {
+      "id": "libreoffice",
+      "name": "LibreOffice",
+      "why": "免费的 Office 套件，能无头（headless）把 docx/pptx/xlsx 转成 PDF，是 AI 批量处理办公文档的关键引擎。",
+      "essential": false,
+      "tier": "heavy",
+      "requires_admin": true,
+      "official_url": "https://www.libreoffice.org/download/",
+      "install": {
+        "darwin": "brew install --cask libreoffice",
+        "win32": "winget install -e --id TheDocumentFoundation.LibreOffice",
+        "linux": "sudo apt install libreoffice"
+      },
+      "fallback_install": "官网下载对应系统安装包逐屏安装；Windows 装完要把安装目录下的 program 目录加进 PATH，才能命令行调用 soffice。",
+      "verify": {"cmd": "soffice --version", "expect": "LibreOffice 2x.x.x.x"},
+      "notes": [
+        "macOS 陷阱：soffice 藏在 app 包里，命令行直接敲 soffice 往往找不到 —— 真实路径是 /Applications/LibreOffice.app/Contents/MacOS/soffice。",
+        "Windows 陷阱：命令行调用前把安装目录下的 program 目录加进 PATH。",
+        "体积约数百 MB~1GB，标 heavy，属需要用户自己装的范畴。"
+      ],
+      "china_notes": "官网下载走官方镜像；慢时可换时段，或先用 geekuninstaller 之类无关的站外镜像 —— 不推荐，坚持官网。"
+    },
+    {
+      "id": "tectonic",
+      "name": "Tectonic",
+      "why": "轻量的现代 LaTeX 引擎，按需自动下载宏包，写论文/报告不想装几 GB 的 TeX Live 时用它。",
+      "essential": false,
+      "tier": "light",
+      "requires_admin": false,
+      "official_url": "https://tectonic-typesetting.github.io/",
+      "install": {
+        "darwin": "brew install tectonic",
+        "linux": "brew install tectonic"
+      },
+      "fallback_install": "Windows 无可靠包管理器命令（见 notes）；从官网指向的 GitHub Releases 下载预编译二进制，解压后把可执行文件放进 PATH。",
+      "verify": {"cmd": "tectonic --version", "expect": "tectonic 0.15.x"},
+      "notes": [
+        "【未核实】Tectonic 的 winget 包 id 未经核实，故不给 winget 命令 —— 请勿编造。",
+        "Windows 可靠路径：从 GitHub Releases（github.com/tectonic-typesetting/tectonic）下载其预编译二进制，或走 cargo install tectonic。",
+        "macOS/Linux 优先用 brew，Windows 无 brew 时走官网 Releases。",
+        "首次编译会联网下载宏包，离线环境需加 --only-cached。"
+      ],
+      "china_notes": "GitHub Releases 下载慢用 gh-proxy.com 前缀：https://gh-proxy.com/https://github.com/tectonic-typesetting/tectonic/releases/download/... —— 加速下二进制仍应核对官方校验。"
+    },
+    {
+      "id": "tex",
+      "name": "TeX Live / MiKTeX / MacTeX",
+      "why": "完整的 LaTeX 排版系统，写学位论文、期刊投稿、正式报告的标准工具链。",
+      "essential": false,
+      "tier": "heavy",
+      "requires_admin": true,
+      "official_url": "https://tug.org/texlive/",
+      "install": {
+        "darwin": "brew install --cask mactex-no-gui",
+        "win32": "winget install -e --id MiKTeX.MiKTeX",
+        "linux": "sudo apt install texlive-full"
+      },
+      "fallback_install": "各发行版官网均有安装器：Windows 用 miktex.org，macOS 用 tug.org/mactex/，Linux 用 tug.org/texlive/ 的 install-tl 脚本。",
+      "verify": {"cmd": "tex --version", "expect": "TeX 3.x"},
+      "notes": [
+        "体积巨大（MacTeX/texlive-full 均 >1GB，texlive-full 常达数 GB），绝不可自动安装。",
+        "Windows 走 MiKTeX（可按需下载宏包，初始体积较小）；macOS 走 MacTeX 的 no-gui 版省空间；Linux 的 texlive-full 体积最大。",
+        "官网地址：Windows https://miktex.org/ ；macOS https://tug.org/mactex/ 。"
+      ],
+      "china_notes": "宏包下载换清华 TUNA 镜像：MiKTeX 里把 Repository 设为 https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/win32/miktex/tm/packages/ ；TeX Live 用 tlmgr option repository https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet 。"
+    },
+    {
+      "id": "pandoc",
+      "name": "pandoc",
+      "why": "文档格式转换瑞士军刀，docx/markdown/tex/pdf/html 互相转，办公写作用得最多的小工具。",
+      "essential": false,
+      "tier": "light",
+      "requires_admin": false,
+      "official_url": "https://pandoc.org/installing.html",
+      "install": {
+        "darwin": "brew install pandoc",
+        "win32": "winget install -e --id JohnMacFarlane.Pandoc",
+        "linux": "sudo apt install pandoc"
+      },
+      "fallback_install": "官网 Installing 页有各系统安装器与独立 zip 二进制，Windows 用 zip 版解压即可免管理员。",
+      "verify": {"cmd": "pandoc --version", "expect": "pandoc 3.x"},
+      "notes": [
+        "转 PDF 需要额外装 LaTeX（见 tex/tectonic）；只转 md↔docx↔html 则无需。",
+        "Windows 有独立 portable zip，免管理员权限。"
+      ],
+      "china_notes": "官网/GitHub Releases 慢用 gh-proxy.com 前缀加速下载。"
+    },
+    {
+      "id": "poppler",
+      "name": "poppler（pdftotext / pdftoppm 等）",
+      "why": "PDF 抽文字、转图片的底层工具，AI 读扫描版 PDF、生成缩略图都靠它。",
+      "essential": false,
+      "tier": "light",
+      "requires_admin": false,
+      "official_url": "https://poppler.freedesktop.org/",
+      "install": {
+        "darwin": "brew install poppler",
+        "win32": "winget install -e --id oschwartz10612.Poppler",
+        "linux": "sudo apt install poppler-utils"
+      },
+      "fallback_install": "官网提供源码；Windows 二进制可走其 release（poppler for Windows）。",
+      "verify": {"cmd": "pdftoppm -v", "expect": "pdftoppm version 2x.xx.x"},
+      "notes": [
+        "Windows 陷阱：poppler 装好后默认【不在 PATH】，必须把其 bin 目录加进系统 PATH，否则命令行找不到 pdftotext/pdftoppm。",
+        "Mac 上命令名是 pdftotext/pdftoppm（brew 装 poppler 提供）。",
+        "Linux 包名是 poppler-utils，不是 poppler。"
+      ],
+      "china_notes": "Linux apt 换国内源；Windows 二进制走 GitHub Releases 时可用 gh-proxy.com 前缀。"
+    },
+    {
+      "id": "ffmpeg",
+      "name": "ffmpeg",
+      "why": "音视频处理的万能工具：抽帧、转码、剪片段、提取音轨，做视频作业和课件全靠它。",
+      "essential": false,
+      "tier": "light",
+      "requires_admin": false,
+      "official_url": "https://ffmpeg.org/download.html",
+      "install": {
+        "darwin": "brew install ffmpeg",
+        "win32": "winget install -e --id Gyan.FFmpeg",
+        "linux": "sudo apt install ffmpeg"
+      },
+      "fallback_install": "官网下载页只给源码与各平台构建链接；Windows 免管理员办法是下载构建方的 zip 版，解压后把 bin 加进 PATH。",
+      "verify": {"cmd": "ffmpeg -version", "expect": "ffmpeg version 7.x"},
+      "notes": [
+        "官网 ffmpeg.org 本身不提供 Windows 二进制，Windows 走第三方构建（winget 源里的 Gyan.FFmpeg 是广泛使用的官方推荐构建）。",
+        "函数多依赖（如 libx264），用发行版/构建方提供的完整版比自行编译省事。"
+      ],
+      "china_notes": "Windows 构建走 GitHub Releases 时用 gh-proxy.com 前缀加速：https://gh-proxy.com/https://github.com/BtbN/FFmpeg-Builds/releases/download/... —— 下载后建议核对官方校验。"
+    },
+    {
+      "id": "zotero",
+      "name": "Zotero",
+      "why": "免费文献管理神器，把论文 PDF、引用、文献格式一键管好，写论文引用不再手打参考文献。",
+      "essential": false,
+      "tier": "medium",
+      "requires_admin": true,
+      "official_url": "https://www.zotero.org/download",
+      "install": {
+        "darwin": "brew install --cask zotero",
+        "win32": "winget install -e --id Zotero.Zotero"
+      },
+      "fallback_install": "官网下载对应系统安装包逐屏安装；Windows 也有便携版（zip）可免管理员。",
+      "verify": {"cmd": "（图形程序）打开 Zotero → Help → About 查看版本", "expect": "显示 Zotero 7.x 版本号"},
+      "notes": [
+        "requires_admin 特指 Windows（默认装到 Program Files）；macOS brew cask 装到 /Applications，通常不需额外提权。",
+        "这是图形界面程序，没有命令行验证方式，只能让用户点 Help → About 确认。",
+        "配浏览器插件 Zotero Connector 可一键抓取网页文献。"
+      ],
+      "china_notes": "官网下载走官方 CDN；慢时换时段。Windows 便携版同样从官网获取。"
+    },
+    {
+      "id": "obsidian",
+      "name": "Obsidian",
+      "why": "本地优先的 Markdown 笔记软件，笔记就是 md 文件，方便 AI 直接读写、检索你的知识库。",
+      "essential": false,
+      "tier": "medium",
+      "requires_admin": false,
+      "official_url": "https://obsidian.md/download",
+      "install": {
+        "darwin": "brew install --cask obsidian",
+        "win32": "winget install -e --id Obsidian.Obsidian"
+      },
+      "fallback_install": "官网下载对应系统安装包；Windows 有便携/免安装包，解压即用，免管理员。",
+      "verify": {"cmd": "（图形程序）打开 Obsidian → 设置/关于 查看版本", "expect": "显示 Obsidian 1.x.x 版本号"},
+      "notes": [
+        "笔记以纯 Markdown 存本地，AI 可直接读写文件，无需数据库。",
+        "图形界面程序，无命令行验证方式。",
+        "requires_admin=false：官网提供免安装包，Windows 便携版无需管理员。"
+      ],
+      "china_notes": "官网下载走官方 CDN；慢时换时段。安装包较小，一般无需镜像。"
+    }
+  ],
+
+  "install_order": [
+    "git",
+    "python",
+    "uv",
+    "node",
+    "pandoc",
+    "poppler",
+    "ffmpeg",
+    "tectonic",
+    "xcode-clt",
+    "msvc-build-tools",
+    "msys2",
+    "libreoffice",
+    "octave",
+    "tex",
+    "zotero",
+    "obsidian",
+    "matlab"
+  ],
+  "_install_order_note": "从零开始按此顺序最不容易卡住：先 git+python（一切的地基，且都免管理员）→ uv（提速后续 Python 装包）→ node/pandoc/poppler/ffmpeg/tectonic（都是 light，几十 MB，失败可容忍）→ 再上编译工具链（mac 的 Xcode CLT / win 的 MSVC+MSYS2，因为它们常是其他包安装的前置，体积大需用户自己动手）→ 最后才是 heavy 的 LibreOffice/TeX 与 medium 的 Octave/Zotero/Obsidian，以及需学校许可证、AI 完全装不了的 MATLAB。核心原则：先装小的、免管理员的，把能自动化的跑通；体积大或需授权的一律交用户手动完成。"
+}

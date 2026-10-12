@@ -1,6 +1,6 @@
 {
-  "_note": "社区高星技能清单。标了 default 的默认装（见 _usage）；其余的按需加装。每条 repo 都真实存在，stars 为 GitHub 查询量级；查不到许可证的写「未核实」，不编造。subdirs 是安装程序会逐个克隆后检查 SKILL.md 的子目录；标「已核实」的目录结构我实际读过仓库，其余在 note 里说明。",
-  "_usage": "标了 default 的两个（anthropics-skills / ppt-master）默认就会装。加装其他的：--with-community all（全部 13 个）或 --with-community superpowers,tutor-skills。不想要默认的那两个：--no-community-defaults",
+  "_note": "社区高星技能清单。**默认一个都不装** —— 第三方仓库要么有许可约束、要么增长来源存疑、要么体积过大，都不适合作为默认信任对象。全部按需：--with-community <id>。每条 repo 都真实存在，stars 为 GitHub 查询量级；查不到许可证的写「未核实」，不编造。commit 字段是**版本锚点**：安装时会 clone 后校验 HEAD 是否等于它，不等则中止 —— 这能挡住镜像篡改与 repo-jacking（git 自身的校验只保证传输自洽，挡不住这些）。",
+  "_usage": "默认不装任何社区技能。装某个：--with-community ppt-master；装全部：--with-community all。想装但仓库已更新（commit 锚点不匹配）时，用 --allow-unpinned 跳过校验 —— 但这等于放弃版本固定，要想清楚。维护者更新锚点：python3 scripts/pin_commits.py",
   "_excluded": "未收录 hesreallyhim/awesome-claude-code（~55k）：它是策展索引（README 列表），本身不是 SKILL.md 技能集合，没有可复制的技能目录，装了只会报「没找到子目录」。作为「去哪找技能」的索引仍有价值，但不适合放进安装清单。",
   "skills": [
     {
@@ -8,11 +8,16 @@
       "repo": "https://github.com/anthropics/skills",
       "what": "官方文档四件套技能：docx / pptx / xlsx / pdf 的文件级读写",
       "stars": "~180k",
-      "license": "未核实（仓库未提供 SPDX 许可标识）",
-      "license_risk": "",
-      "default": true,
-      "subdirs": ["skills/docx", "skills/pptx", "skills/xlsx", "skills/pdf"],
-      "note": "【默认安装】本清单里最该推荐的。它是自写 office-docs 技能的加强版：官方维护、处理复杂 Word 修订/批注/目录与设计级 PPTX 更可靠。四个目录结构一致（skills/<name>/SKILL.md），已核实 skills/docx，其余同构；安装时会逐个验证 SKILL.md，缺失自动跳过。许可证未标注，如需商用请自行核对上游。"
+      "license": "专有许可（Proprietary）",
+      "license_risk": "⚠️ Anthropic 专有许可：明令禁止提取、复制、衍生、分发其内容。本套件只「让用户自己 clone 上游仓库」，不内嵌、不再分发它的任何文件；但你要清楚它是专有软件，商用与二次分发都必须先看上游条款。",
+      "subdirs": [
+        "skills/docx",
+        "skills/pptx",
+        "skills/xlsx",
+        "skills/pdf"
+      ],
+      "note": "【已从默认安装改为按需】原因有两条：① 许可证是专有的（见 license_risk）；② 实读其 docx 技能后发现它并未解决中文排版问题 —— SKILL.md 全文没有 eastAsia/中文字体相关内容，靠的是「导出 PDF→转图→看图」的渲染校验闭环兜底。真正值得借鉴的是这个校验闭环思路与它的工程化脚本（merge_runs/validate），本套件已自行实现类似的渲染目检流程（见 skills/office-docs）。想要就用 --with-community anthropics-skills 自己装。",
+      "commit": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
     },
     {
       "id": "superpowers",
@@ -38,7 +43,8 @@
         "skills/using-superpowers",
         "skills/writing-skills"
       ],
-      "note": "偏重，适合常写代码的人；对只写文档的人是负担。仓库 skills/ 下共 15 个技能，skills/ 本身不是技能目录（无 SKILL.md），所以逐个子目录列出。已核实 skills/using-superpowers/SKILL.md，其余同构。"
+      "note": "偏重，适合常写代码的人；对只写文档的人是负担。仓库 skills/ 下共 15 个技能，skills/ 本身不是技能目录（无 SKILL.md），所以逐个子目录列出。已核实 skills/using-superpowers/SKILL.md，其余同构。",
+      "commit": "bb92a77741419a4ab5f06e711a283343f1ada0c3"
     },
     {
       "id": "ppt-master",
@@ -47,9 +53,11 @@
       "stars": "~61k",
       "license": "MIT",
       "license_risk": "",
-      "default": true,
-      "subdirs": ["skills/ppt-master"],
-      "note": "【默认安装】补上 python-pptx 做不出来的那一块 —— 设计级 PPT。python-pptx 只能摆结构（文本框、图片、位置），做不出设计；要「精美 PPT」得靠它。已核实 skills/ppt-master/SKILL.md。技能目录里带 scripts/ 和 templates/，仓库根有 requirements.txt，需要 Python 环境；重排版/动画的部分依赖较多，装前看清依赖。"
+      "subdirs": [
+        "skills/ppt-master"
+      ],
+      "note": "【已从默认安装改为按需】原因：① 增长曲线可疑 —— 2025-12 建仓即约 6 万 star，不符合正常传播规律；② 实测技能目录约 78MB（社区资料常写 18M，偏小），默认装下载成本高。功能本身有价值（做设计级 PPT，补 python-pptx 做不出的那一块），但作为「默认信任」的对象不合适。想要就用 --with-community ppt-master 自己装。",
+      "commit": "ca04346de145ed6462ddf34682848e71df5e20a2"
     },
     {
       "id": "mathmodeling-skills",
@@ -69,7 +77,8 @@
         "plugins/mathmodeling-skills/skills/robustness-checker",
         "plugins/mathmodeling-skills/skills/paper-section-writer"
       ],
-      "note": "技能实际位于 plugins/mathmodeling-skills/skills/ 下，共 29 个；此处只列主流程 9 个（技能不是越多越好）。已核实 workflow-orchestrator/SKILL.md，其余同构。"
+      "note": "技能实际位于 plugins/mathmodeling-skills/skills/ 下，共 29 个；此处只列主流程 9 个（技能不是越多越好）。已核实 workflow-orchestrator/SKILL.md，其余同构。",
+      "commit": "0b46e9c78335624ed3738b86087b6e8ff9ac1f0d"
     },
     {
       "id": "math-modeling-skill",
@@ -78,8 +87,11 @@
       "stars": "1.86k",
       "license": "未核实",
       "license_risk": "",
-      "subdirs": ["skills"],
-      "note": "⚠ 该仓库的 SKILL.md 在仓库根目录，不是子目录形式。本安装器只支持「子目录技能」，所以这里会被判定为『未找到子目录』并跳过（不要改成 \".\"，那会触发对宿主 skills 目录的误删）。要用请手动克隆后把仓库整体拷进宿主的 skills/math-modeling-skill/。目录结构已核实。"
+      "subdirs": [
+        "skills"
+      ],
+      "note": "⚠ 该仓库的 SKILL.md 在仓库根目录，不是子目录形式。本安装器只支持「子目录技能」，所以这里会被判定为『未找到子目录』并跳过（不要改成 \".\"，那会触发对宿主 skills 目录的误删）。要用请手动克隆后把仓库整体拷进宿主的 skills/math-modeling-skill/。目录结构已核实。",
+      "commit": "b2ffacb5d6346f7bca3e1e95e2805f9e57d2014d"
     },
     {
       "id": "academic-paper-skills",
@@ -88,8 +100,12 @@
       "stars": "1.37k",
       "license": "MIT",
       "license_risk": "",
-      "subdirs": ["strategist", "composer"],
-      "note": "已核实 strategist/SKILL.md 与 composer/SKILL.md，技能直接位于仓库根下的两个目录。面向英文/科研写作流程。"
+      "subdirs": [
+        "strategist",
+        "composer"
+      ],
+      "note": "已核实 strategist/SKILL.md 与 composer/SKILL.md，技能直接位于仓库根下的两个目录。面向英文/科研写作流程。",
+      "commit": "c325557646e9418939ccc7b99171b149ad6314f1"
     },
     {
       "id": "tutor-skills",
@@ -98,8 +114,12 @@
       "stars": "1.34k",
       "license": "MIT",
       "license_risk": "",
-      "subdirs": ["skills/tutor", "skills/tutor-setup"],
-      "note": "已核实 skills/tutor/SKILL.md 与 skills/tutor-setup/SKILL.md。产物以 Markdown 学习库为主，不依赖付费服务。"
+      "subdirs": [
+        "skills/tutor",
+        "skills/tutor-setup"
+      ],
+      "note": "已核实 skills/tutor/SKILL.md 与 skills/tutor-setup/SKILL.md。产物以 Markdown 学习库为主，不依赖付费服务。",
+      "commit": "397110c9fefbc6bd5444277686600aec28063c05"
     },
     {
       "id": "security-audit-skill",
@@ -108,8 +128,11 @@
       "stars": "~28k",
       "license": "MIT",
       "license_risk": "",
-      "subdirs": ["skills/security-audit"],
-      "note": "已核实 skills/security-audit/SKILL.md。偏专业，普通课程作业用不上；做后端/交付前自查时有用。"
+      "subdirs": [
+        "skills/security-audit"
+      ],
+      "note": "已核实 skills/security-audit/SKILL.md。偏专业，普通课程作业用不上；做后端/交付前自查时有用。",
+      "commit": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8"
     },
     {
       "id": "ui-ux-pro-max-skill",
@@ -127,7 +150,8 @@
         ".claude/skills/brand",
         ".claude/skills/design"
       ],
-      "note": "技能位于 .claude/skills/ 下（注意这是以点开头的目录），共 7 个，已核实目录列表。适合做前端/作品集/PPT 视觉的人。"
+      "note": "技能位于 .claude/skills/ 下（注意这是以点开头的目录），共 7 个，已核实目录列表。适合做前端/作品集/PPT 视觉的人。",
+      "commit": "026b6e172c47fa09246b89b6e1d414b8e15f1057"
     },
     {
       "id": "cumcm-thesis",
@@ -136,8 +160,11 @@
       "stars": "1.44k",
       "license": "未核实",
       "license_risk": "",
-      "subdirs": ["latex"],
-      "note": "⚠ 这是 LaTeX 论文模板仓库，不是 SKILL.md 技能，安装器会因找不到技能子目录而跳过。收录是给 AI 当资料/手动取用：需要模板时直接克隆，把 .cls 和示例 .tex 拷进你的论文目录。star 已核实，许可证未核实。"
+      "subdirs": [
+        "latex"
+      ],
+      "note": "⚠ 这是 LaTeX 论文模板仓库，不是 SKILL.md 技能，安装器会因找不到技能子目录而跳过。收录是给 AI 当资料/手动取用：需要模板时直接克隆，把 .cls 和示例 .tex 拷进你的论文目录。star 已核实，许可证未核实。",
+      "commit": "38d1f216bec3c9ffffb7dd09bf6b6c54f486b130"
     },
     {
       "id": "markdown-viewer-skills",
@@ -146,8 +173,11 @@
       "stars": "3.36k",
       "license": "CC-BY-4.0",
       "license_risk": "CC-BY-4.0 要求署名：再分发或二次使用时须保留出处与许可证文本",
-      "subdirs": ["documd-visuals"],
-      "note": "已核实 documd-visuals/SKILL.md。仓库根下的 research/ 只是研究资料（无 SKILL.md），不是技能，未列入。适合做报告配图/数据分析图。"
+      "subdirs": [
+        "documd-visuals"
+      ],
+      "note": "已核实 documd-visuals/SKILL.md。仓库根下的 research/ 只是研究资料（无 SKILL.md），不是技能，未列入。适合做报告配图/数据分析图。",
+      "commit": "2672b6920f6c055caf72a916b414ede62ecbfc2e"
     },
     {
       "id": "firecrawl-cli",
@@ -163,7 +193,8 @@
         "skills/firecrawl-map",
         "skills/firecrawl-agent"
       ],
-      "note": "技能位于 skills/ 下共 13 个，此处列 5 个核心（已核实目录列表）。⚠ 抓取能力依赖 Firecrawl 远程 API（需 API key，免费额度有限），不是纯本地工具；介意联网/收费的别装。"
+      "note": "技能位于 skills/ 下共 13 个，此处列 5 个核心（已核实目录列表）。⚠ 抓取能力依赖 Firecrawl 远程 API（需 API key，免费额度有限），不是纯本地工具；介意联网/收费的别装。",
+      "commit": "21a08f5579e3616dbec0bb28250fab0076a2c1a3"
     },
     {
       "id": "garden-skills",
@@ -172,8 +203,12 @@
       "stars": "~12.8k",
       "license": "MIT",
       "license_risk": "",
-      "subdirs": ["skills/gpt-image-2", "skills/web-design-engineer"],
-      "note": "技能位于 skills/ 下共 5 个（另有 beautiful-article、kb-retriever、web-video-presentation），已核实目录列表。图像生成类技能通常要外接图像 API/服务，无 key 时无法出图。"
+      "subdirs": [
+        "skills/gpt-image-2",
+        "skills/web-design-engineer"
+      ],
+      "note": "技能位于 skills/ 下共 5 个（另有 beautiful-article、kb-retriever、web-video-presentation），已核实目录列表。图像生成类技能通常要外接图像 API/服务，无 key 时无法出图。",
+      "commit": "7a6d5a72e4f44bb4cc0c23c01b3d97205c723b68"
     }
   ]
 }

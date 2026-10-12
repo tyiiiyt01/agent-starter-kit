@@ -202,6 +202,19 @@ def check_python_deps(packs: list[str]) -> list[tuple[str, bool, str]]:
     return rows
 
 
+def check_ledger_safety() -> list[tuple[str, bool, str]]:
+    """审计账本里的路径是否都在「本套件有权管理的目录」内。
+
+    这是卸载安全的前置检查：如果 state.json 被篡改成含 "/" 或 "~" 之类的路径，
+    卸载就会变成删整个文件系统。卸载前必须过这一关。
+    """
+    try:
+        rows = _apply.audit_ledger()
+    except Exception as exc:  # noqa: BLE001
+        return [("账本审计", False, f"无法审计: {exc}")]
+    return [(p, ok, why) for p, ok, why in rows]
+
+
 def check_shims() -> list[tuple[str, bool, str]]:
     """shim 只有在它所在目录进了 PATH 才有用 —— 这条经常被忽略。"""
     if not SHIM_DIR.exists():
@@ -497,6 +510,19 @@ def main() -> int:
 
     for label, ok, msg in check_shims():
         print(f"{OK if ok else WARN} {label:<26} {msg}")
+
+    ledger = check_ledger_safety()
+    if ledger:
+        print()
+        print("账本安全（卸载前必查：路径必须在本套件有权管理的目录内）")
+        unsafe = [(p, m) for p, ok, m in ledger if not ok]
+        if unsafe:
+            for p, m in unsafe:
+                print(f"{FAIL} {p}")
+                print(f"     {' ' * 8}{m}")
+            print(f"     ⚠ 有 {len(unsafe)} 条路径不安全，**不要执行卸载**，先人工核对账本")
+        else:
+            print(f"{OK} {len(ledger)} 条路径全部在允许范围内")
 
     print()
     core_ok = py_ok and skills_ok

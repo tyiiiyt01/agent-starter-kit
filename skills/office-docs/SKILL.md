@@ -1,85 +1,100 @@
 ---
 name: office-docs
-description: 用 Python 库对 Word/Excel/PPT/PDF 做文件级读写与生成（python-docx、openpyxl、python-pptx、pypdf），含中文字体、三线表、页面设置、公式与条件格式、中文图表等实测配方，并明确列出能力边界。当用户要生成或改写 .docx/.xlsx/.pptx、提取 Word/PDF 内容、批量填表或要求中文排版规范时使用。
+description: 用脚本生成/改写"打开即合规、不用再手动调格式"的 Word、Excel、PPT、PDF：以样式/模板优先路线做中文字体四槽位、三线表、公文版心、页眉页码与目录，交付前用 LibreOffice 渲染成图目检中文与排版。当用户要产出可直接交给老师/领导的 .docx/.xlsx/.pptx，或要求套用公文（GB/T 9704）/学位论文/期刊排版规范时使用。
 ---
 
-# 办公文档处理（文件级）
+# 办公文档（Word / Excel / PPT / PDF）
 
-**能做**：用脚本在磁盘上生成 / 改写 / 读取 `.docx` / `.xlsx` / `.pptx` / `.pdf`，输出结构规范、中文正常、公式与图表保留，用户可以打开直接交。
-**不能做**：Word 原生公式（OMML）、目录自动更新、设计级排版（海报 / 精美 PPT / 封面），也不驱动正在运行的 Office 窗口。
+**能做到**：脚本产出**打开即合格、不用再手动调格式**的 `.docx` / `.xlsx` / `.pptx` / `.pdf` —— 中文字体对槽位、行距缩进合规、表格是规范三线表、页眉页码正确、公文版心对得上、目录能生成。
+**做不到**：设计级排版（海报 / 封面 / 精美 PPT）、程序内嵌中文字体、Word 原生公式与自动更新域、红头印章等位图元素。
 
-一句话：**它能生成"能打开、结构规范、中文正常、可以直接交"的文档；但不会替你做出"设计精美"的文档。**
+一句话：**它是"排版规范化"工具，不是"设计"工具** —— 交出去能被直接收下的规范文档没问题；"好看"要靠现成模板，不是靠它从零画。
 
-以下配方均在 macOS + Python 3.13 下**实测通过**（python-docx 1.2.0 / openpyxl 3.1.5 / matplotlib 3.11.1 / Pillow 12.3.0）。
+⚠️ 本文所有配方都在 macOS + Python 3.13 实测（python-docx 1.2.0 / openpyxl 3.1.5）。凡标「先确认」的，动笔前务必先在环境里验证。
 
-## 0. 依赖
+## 0. 先看这里：能做什么 / 不能做什么（人话总结）
 
-```bash
-python3 -m pip install python-docx openpyxl python-pptx pypdf
-```
+- 要**格式合规、可直接交**：走本文的**样式优先 + 模板优先**路线，能做到。
+- 要**字体万无一失**：程序改不了字体嵌入，**最稳是交付 PDF**（PDF 自控字形，不受对方机器缺字体影响）。
+- 要**精美设计**：本技能做不到，用现成模板填内容，或另装设计类技能。
+- 要**原生公式 / 自动更新的目录**：做不到全自动，见第 7 节边界表。
 
-库名与导入名不同，别记混：Word → `python-docx`（`import docx`）；Excel → `openpyxl`；PPT → `python-pptx`（`import pptx`）；PDF → `pypdf`。
+## 1. 核心路线：样式优先，不是逐段硬编码
 
-## 1. 实测结论速览
+**唯一可靠路线 = 先在 `styles.xml` 里把样式定义对，内容只引用样式名。** 逐段落、逐 run 设字体有三个必踩的坑：
 
-| 格式 | 结果 | 验证方式 |
-|---|---|---|
-| `.docx` 181KB | 成功 | macOS 原生 `textutil -convert txt -stdout x.docx` 能读出中文、标题、表格内容 |
-| `.xlsx` 7KB | 成功 | `load_workbook` 重开，公式 `=C2*0.3+D2*0.7` 保留，条件格式 1 组，图表 1 个 |
-| `.pptx` 173KB | 成功 | `Presentation` 重开，2 页 16:9，中文正常 |
+1. `doc.add_heading(...)` 返回的 run，其 `rPr` 是 `None` → 直接设中文字体会崩：`AttributeError: 'NoneType' object has no attribute 'rFonts'`（只有设过字体属性后 `rPr` 才存在）。
+2. 三线表要手写 `w:tcBorders` XML（python-docx 没有边框 API）；`Table Grid` 给的是**全框线**，不符合中文学术规范。
+3. Word 的目录 / 交叉引用是**域（field）**，程序写完不会自动更新（要打开后按 F9）。
 
-结论：生成的**都是合法可重开的文件**，不是"看着像"。验证一律用**重开 + 取值**，不要只看文件大小。
+**解法**：样式定义一次、全文引用 —— 绕开坑 1（不用逐 run 设），格式也天然一致、可维护。下面的 `set_run_fonts` 是关键零件，它把 `w:rFonts` **四个槽位**一次写全：
 
-## 2. Word（.docx）
-
-读 / 写基础：
-```python
-import docx
-d = docx.Document("in.docx")                  # 读
-for p in d.paragraphs: print(p.style.name, p.text)
-for t in d.tables:
-    for row in t.rows: print([c.text for c in row.cells])
-
-d = docx.Document()                           # 新建
-d.add_heading("标题", level=1); d.add_paragraph("正文段落")
-d.add_paragraph("要点一", style="List Bullet")
-t = d.add_table(rows=2, cols=3); t.cell(0, 0).text = "表头"
-d.save("out.docx")
-```
-
-### 2.1 ⚠️ 中文字体：必须先设 `font.name`，否则**崩溃**
-
-直接对 `add_heading` 返回的 run 访问 `rPr` 会报错：
-```python
-# ❌ 这样写会报错
-doc.add_heading("一、实验目的", level=2).runs[0]._element.rPr.rFonts.set(qn("w:eastAsia"), "黑体")
-# AttributeError: 'NoneType' object has no attribute 'rFonts'
-```
-原因：run 的 `rPr`（run properties）元素只有在**设置过字体属性后**才会被创建，直接访问 `._element.rPr` 得到 `None`。
-
-正确做法（实测通过）：先设 `run.font.name`（这会创建 `rPr` / `rFonts`），再补 `eastAsia`：
 ```python
 from docx.oxml.ns import qn
 
-def cjk(run, ascii_font="Times New Roman", cjk_font="宋体", size=12, bold=False):
-    """安全地给 run 设置中文字体。必须先设 font.name，否则 rPr 不存在会崩。"""
-    run.font.name = ascii_font      # 这一步会创建 rPr / rFonts
-    run.font.size = Pt(size)
-    run.font.bold = bold
-    run._element.rPr.rFonts.set(qn("w:eastAsia"), cjk_font)
-    return run
+def set_run_fonts(rpr, ascii_font="Times New Roman", cjk_font="宋体"):
+    """把 w:rFonts 四槽位一次设对：西文/高ANSI/中文/复杂文种。rpr 可来自 style 或 run。"""
+    rf = rpr.get_or_add_rFonts()
+    rf.set(qn("w:ascii"), ascii_font)      # 西文
+    rf.set(qn("w:hAnsi"), ascii_font)      # 西文 High ANSI
+    rf.set(qn("w:eastAsia"), cjk_font)     # 中文（最关键，不设必然回落）
+    rf.set(qn("w:cs"), ascii_font)         # 复杂文种 complex script
+    for a in ("w:asciiTheme", "w:hAnsiTheme", "w:eastAsiaTheme", "w:cstheme"):
+        rf.attrib.pop(qn(a), None)         # 清掉主题字体绑定，否则内置样式可能不生效
 ```
-⚠️ **为什么必须设 `w:eastAsia`**：Word 对中文有独立的字体槽位（eastAsia）。只设 `font.name` 只影响西文（ascii/hAnsi），**中文会回落成默认字体**，在学校要求"宋体正文 + 黑体标题"时直接不合格。
 
-### 2.2 三线表：python-docx 没有 API，要手写 XML
+⚠️ **为什么必须四个都设**：Word 对中文有**独立字体槽位**。只设 `font.name` 只影响 `w:ascii`/`w:hAnsi`，**`w:eastAsia` 不设则中文回落成默认字体** —— 学校要求"宋体正文 + 黑体标题"时直接不合格。
+⚠️ **内置标题样式默认走主题字体**（`w:asciiTheme` 等），所以上面那行 `pop` 是必要的。
 
-中文学术规范的三线表是「顶线粗、表头下线细、底线粗，无竖线」。`table.style = "Table Grid"` 会给**全框线**，不符合规范，且 python-docx 没有现成 API 改边框。实测可用做法：
+## 2. Word：达到"直接可用"
+
+### 2.1 定义样式（推荐做法）
+
 ```python
-from docx.oxml.ns import qn
+from docx.enum.style import WD_STYLE_TYPE
+from docx.shared import Pt
+
+def define_style(doc, name, cjk="宋体", ascii_="Times New Roman",
+                 size=Pt(12), bold=False, line=1.5, indent_ch=2):
+    st = doc.styles.add_style(name, WD_STYLE_TYPE.PARAGRAPH)
+    st.font.name = ascii_; st.font.size = size; st.font.bold = bold
+    set_run_fonts(st.element.get_or_add_rPr(), ascii_, cjk)
+    pf = st.paragraph_format
+    pf.line_spacing = line
+    pf.first_line_indent = size * indent_ch    # 首行缩进 2 字符（≈2×字号）
+    return st
+
+define_style(doc, "正文",   cjk="宋体", size=Pt(12), line=1.5)
+define_style(doc, "标题1",  cjk="黑体", size=Pt(16), bold=True, line=1.5, indent_ch=0)
+
+doc.add_paragraph("摘要正文……", style="正文")   # 内容只引用样式名，不逐段设字体
+doc.add_paragraph("1 引言",      style="标题1")
+```
+
+若一定要用内置 `Heading N`：`set_run_fonts(doc.styles["Heading 1"].element.get_or_add_rPr(), "Times New Roman", "黑体")`，并确认主题属性已被清掉。
+
+### 2.2 页面设置（A4 / 公文版心）
+
+```python
+from docx.shared import Cm, Mm
+sec = doc.sections[0]
+sec.page_width, sec.page_height = Cm(21), Cm(29.7)          # A4
+# 普通学位论文：上下 2.54cm、左右 3.17cm（左留装订线）
+sec.top_margin = sec.bottom_margin = Cm(2.54)
+sec.left_margin = sec.right_margin = Cm(3.17)
+# 党政机关公文（GB/T 9704）：天头(上)37±1mm、订口(左)28±1mm，版心 156×225mm
+# 由版心反推：下 ≈35mm、右 ≈26mm
+sec.top_margin, sec.left_margin   = Mm(37), Mm(28)
+sec.bottom_margin, sec.right_margin = Mm(35), Mm(26)
+```
+
+### 2.3 三线表（XML 配方，必须手写）
+
+```python
 from docx.oxml import OxmlElement
 
 def three_line_table(tbl):
-    """把表格改成中文学术规范的三线表：只保留顶线、表头下线、底线。"""
+    """中文学术三线表：顶线粗、表头下线细、底线粗，无竖线。w:sz 单位为 1/8 pt。"""
     for i, row in enumerate(tbl.rows):
         for cell in row.cells:
             tcPr = cell._tc.get_or_add_tcPr()
@@ -90,111 +105,115 @@ def three_line_table(tbl):
                      (edge == "bottom" and i in (0, len(tbl.rows) - 1))
                 el.set(qn("w:val"), "single" if on else "nil")
                 if on:
-                    el.set(qn("w:sz"), "12" if i == 0 else "6")   # 顶/底线 12，表头线 6
+                    el.set(qn("w:sz"), "12" if i == 0 else "6")   # 顶/底线 1.5pt，表头线 0.75pt
                 borders.append(el)
             tcPr.append(borders)
 ```
 
-中文论文页面设置（A4 + 装订线）：
+### 2.4 页眉页脚 / 页码
+
 ```python
-from docx.shared import Cm
-sec = doc.sections[0]
-sec.page_width, sec.page_height = Cm(21), Cm(29.7)      # A4
-sec.top_margin = sec.bottom_margin = Cm(2.54)            # 上下 2.54
-sec.left_margin = sec.right_margin = Cm(3.17)            # 左右 3.17（留装订线）
+# 页码/页眉是"域"，需按需设置
+hdr = sec.header; hdr.is_linked_to_previous = False
+hdr.paragraphs[0].text = "某某大学本科毕业论文"
+ftr = sec.footer; ftr.is_linked_to_previous = False
+# 首页不显示 / 奇偶页不同页眉：需显式开开关，否则设置不生效
+sec.different_first_page_header_footer = True                     # 首页页眉页脚独立
+doc.settings.odd_and_even_pages_header_footer = True              # 奇偶页不同页眉
 ```
 
-## 3. Excel（.xlsx）
+页码本身是 `PAGE` 域，需插 XML；生成后提醒用户在 Word 里确认（见第 7 节）。
 
-读 / 写与实用配方（实测通过）：
-```python
-import openpyxl
-wb = openpyxl.load_workbook("in.xlsx", data_only=True)   # 读；data_only=True 取值不算公式
-ws = wb.active
-for row in ws.iter_rows(values_only=True): print(row)
+### 2.5 公文格式硬指标（GB/T 9704—2012）
 
-wb = openpyxl.Workbook(); ws = wb.active; ws.title = "Sheet1"
-ws.append(["姓名", "平时", "期末", "总分"])
-ws["E2"] = "=C2*0.3+D2*0.7"                  # 公式直接写字符串，openpyxl 原样保留
-ws.column_dimensions["B"].width = 12          # 列宽要显式设
+- 版心：天头(上) 37±1mm、订口(左) 28±1mm、版心 **156×225mm**
+- 每页 **22 行 × 每行 28 字**
+- 正文：**3 号仿宋_GB2312**（≈16pt）
+- 标题层级：一级**黑体**、二级**楷体**、三/四级**仿宋**
+- 页码：**4 号半角宋体**
+- ⚠️ 坑：**仿宋_GB2312 不是系统标配字体**，缺字体的机器会回落 —— 交付 PDF 或预处理嵌入。
+
+### 2.6 学位论文共性要求（各校细则不同）
+
+- 正文**宋体小四**（12pt）、标题**黑体**、**1.5 倍行距**、**首行缩进 2 字符**
+- 页眉页脚常**奇偶页不同**；**自动目录**；图表**交叉引用**；参考文献 **GB/T 7714**
+- 各校有独立模板 → **让用户提供学校模板**，走模板路线最省事。
+
+## 3. 交付前的渲染-目检循环（最有价值的一步）
+
+程序**无法自证**"中文字体有没有回落""排版对不对"。**唯一可靠办法是渲染出来看**：
+
+```bash
+# 首次需安装（macOS）：brew install --cask libreoffice ; brew install poppler
+soffice --headless -env:UserInstallation=file:///tmp/lo_profile \
+  --convert-to pdf --outdir /tmp/render out.docx
+pdftoppm -png -r 100 /tmp/render/out.pdf /tmp/render/page
+# 然后让 AI 看图确认：中文字体是否正常？有无方框/回落？标题层级对不对？表格线对不对？
 ```
-- **表头样式**：`Font(bold=True, color="FFFFFF")` + `PatternFill("solid", fgColor="02743B")`
-- **条件格式**：`CellIsRule(operator="lessThan", formula=["60"], fill=..., font=...)`，用 `ws.conditional_formatting.add("E2:E5", rule)` 挂上去
-- **图表**：`LineChart()` + `Reference(ws, min_col=5, min_row=1, max_row=5)` + `ws.add_chart(ch, "H2")`
-- 写完用 `load_workbook` **重开验证**：公式文本在、条件格式组数对、图表对象在
 
-## 4. PPT（.pptx）
+- macOS 上 `soffice` 可能不在 PATH，用全路径 `/Applications/LibreOffice.app/Contents/MacOS/soffice`。
+- 换机器/换字体后**必须重跑**这一段。
+- 无法看图的环境：至少用 `pdftotext /tmp/render/out.pdf - | head` 抽取文本，确认**内容完整、无乱码**。
+- **要"字体万无一失"就直接交付 PDF**：PDF 自控字形，不受对方机器缺字体影响（Word 改 PDF 用上面的 `soffice` 转换即可）。
+- 读已有 PDF 用 `pypdf`（`PdfReader`/`PdfWriter`）；⚠️ `extract_text()` 对**扫描版返回空**（无文本层），需先确认是否扫描件。
 
-结构生成（实测通过）：
-```python
-from pptx import Presentation
-from pptx.util import Inches, Pt
-prs = Presentation()
-prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)   # 16:9
-blank = prs.slide_layouts[6]                                      # 空白版式最可控
-s = prs.slides.add_slide(blank)
-tb = s.shapes.add_textbox(Inches(1), Inches(2.6), Inches(11.3), Inches(1.6))
-r = tb.text_frame.paragraphs[0].add_run()
-r.text = "标题"
-r.font.name = "微软雅黑"; r.font.size = Pt(44)
-s.shapes.add_picture("fig.png", Inches(7.6), Inches(2.0), width=Inches(5.0))
-prs.save("out.pptx")
-```
-⚠️ **局限**：`python-pptx` 只能摆**结构**（文本框、图片、位置），**做不出设计**。版式索引随模板变化，先打印 `prs.slide_layouts` 的**名字**确认，别硬编码下标。要"精美 PPT"必须另装 `ppt-master`（见第 6 节）。
+## 4. Excel：新建用 XlsxWriter / 改已有用 openpyxl
 
-## 5. 中文插图：matplotlib
+- **新建报表（带格式/图表/条件格式）→ `XlsxWriter`**（BSD-2 许可）：格式、图表、条件格式能力比 openpyxl 更强。**只能新建**，不能改已有模板。
+- **读取或修改已有文件 → `openpyxl`**：`load_workbook(path)` 原样保留公式、条件格式、图表。
+- 导入名：`import xlsxwriter` / `import openpyxl`。
+- 常用（openpyxl）：`Font(bold=True, color="FFFFFF")` + `PatternFill("solid", fgColor="02743B")` 做表头；`CellIsRule(...)` 挂 `ws.conditional_formatting.add("E2:E5", rule)`；`LineChart()` + `Reference(...)` + `ws.add_chart(ch, "H2")`。
+- 写完一律 `load_workbook` **重开验证**：公式文本在、条件格式组数对、图表对象在。
+- ⚠️ 环境里未装 `XlsxWriter` 时先 `python3 -m pip install XlsxWriter`，别默认它已存在。
+
+## 5. PPT：模板优先填充，不要从零画
+
+- 用 `python-pptx`（`import pptx`）或 `PptxGenJS`（MIT 许可）往**现成模板/版式里填内容**，别从零摆框。
+- 版式索引随模板变化：先打印 `prs.slide_layouts` 的**名字**确认，别硬编码下标。
+- ⚠️ **`Marp` / `Slidev` 导出的 pptx 是图片、不可编辑** —— 中文商务/汇报场景要可编辑 pptx 时**不要用它们**。
+
+## 6. 中文插图：matplotlib
 
 ```python
-import matplotlib; matplotlib.use("Agg")
+import matplotlib; matplotlib.use("Agg")   # 无显示器环境
 import matplotlib.pyplot as plt
-plt.rcParams["font.sans-serif"] = ["Songti SC", "Heiti SC", "Arial Unicode MS"]  # macOS 可用
-plt.rcParams["axes.unicode_minus"] = False               # 否则负号显示成方框
-fig.savefig("fig.png", dpi=600, bbox_inches="tight")     # 学术要求 ≥600 dpi
-# 插入 docx：必须先有段落，再由段落的 run 承载图片
-doc.add_paragraph().add_run().add_picture("fig.png", width=Cm(11))
-```
-⚠️ `Document` 对象**没有** `add_run()` 方法 —— 写成 `doc.add_run().add_picture(...)` 会报 `AttributeError`。
-图片必须挂在**段落里的 run** 上：`doc.add_paragraph().add_run().add_picture(...)`。
-字体名跨平台不同：macOS 常见 `Songti SC`（宋体）、`Heiti SC`（黑体）、`Arial Unicode MS`、`PingFang SC`；Windows 常见 `SimSun`（宋体）、`SimHei`（黑体）、`Microsoft YaHei`（微软雅黑）。建议配成**候选列表**让 matplotlib 自动挑，并提前验证字体是否命中：
-```python
-import matplotlib.font_manager as fm
-fm.findfont("SimHei", fallback_to_default=False)   # 找不到会抛异常，用来提前发现
+plt.rcParams["font.sans-serif"] = [
+    "Noto Sans CJK SC", "Source Han Sans SC",      # Linux / 通用
+    "PingFang SC", "Heiti SC", "Arial Unicode MS", # macOS
+    "Microsoft YaHei", "SimHei",                   # Windows
+]
+plt.rcParams["axes.unicode_minus"] = False          # 否则负号显示成方框
+fig.savefig("fig.png", dpi=600, bbox_inches="tight")   # 学术要求 ≥600 dpi
+doc.add_paragraph().add_run().add_picture("fig.png", width=Cm(11))  # 图必须挂在 run 上
 ```
 
-## 6. 能力边界（做不到的要讲清）
+- ⚠️ `Document` 对象**没有** `add_run()`；必须 `doc.add_paragraph().add_run().add_picture(...)`。
+- 没配到字体**不报错**，会静默退回成方框 —— **必须渲染看图确认**。
+- 提前验证字体是否命中：`matplotlib.font_manager.findfont("SimHei", fallback_to_default=False)`（找不到会抛异常）。
 
-| 做不到 | 原因 | 怎么办 |
+## 7. 能力边界（诚实表）
+
+| 做不到 | 原因 | 替代 |
 |---|---|---|
-| Word **原生公式（OMML）** | python-docx 没有公式 API，只能插入图片或用纯文本近似 | 复杂公式用 LaTeX 生成图片插入，或手工在 Word 里敲 |
-| Word **目录自动更新** | 目录是域（field），需要 Word 打开后按 F9 更新 | 生成完提醒用户手动更新；或用 pandoc 的 `--toc` |
-| **设计级排版**（海报、精美 PPT、封面设计） | python-docx / python-pptx 只能做结构，没有设计能力 | 明确说清这是"结构正确、能用"级别；设计型输出要另装 `ppt-master`（默认会装）或 `anthropics-skills` |
-| **驱动正在运行的 Office 窗口** | 需要进程联动 | 只做文件级读写 |
-| `.doc`（旧格式）、`.xls`（旧格式） | 库不支持 | 先用 LibreOffice `soffice --headless --convert-to` 转成新格式 |
+| **程序内嵌中文字体** | python-docx / docx(npm) 都不支持 `w:embedRegular` | 模板里预先勾"将字体嵌入文件"；或**直接交付 PDF** |
+| Word **原生公式（OMML）** | 无 API | LaTeX 生成图片插入，或手工敲 |
+| **目录/交叉引用自动更新** | 是 Word **域（field）**，需打开后按 **F9** | 生成后提醒用户更新；或用 pandoc `--toc` |
+| **公文红头/印章** | 是位图图形 | 用模板预置 |
+| **页眉奇偶页不同** | 需分节 + 显式开关 | 设 `different_first_page_header_footer`、`odd_and_even_pages_header_footer` |
+| 各校/各刊**个性化细则** | 无法穷举 | 让用户提供学校模板，走模板路线 |
+| **设计级排版**（海报/封面/精美 PPT） | 库只做结构 | 用现成模板，或另装设计类技能 |
+| `.doc` / `.xls` 旧格式 | 库不支持 | 先 `soffice --headless --convert-to` 转新格式 |
 
-## 7. PDF（以读为主）
+## 8. 常见坑清单
 
-```python
-from pypdf import PdfReader, PdfWriter
-r = PdfReader("in.pdf"); print(len(r.pages), r.metadata)
-w = PdfWriter(); w.append(r); w.write("merged.pdf")
-```
-- `extract_text()` 对**扫描版 PDF 返回空**（没有文本层），需要 OCR —— 先确认是不是扫描件
-- 提取复杂排版 / 表格效果一般；**新建 PDF 不是 pypdf 的强项**，要排版生成 PDF 先出 HTML / Markdown 再转换
-
-## 8. 常见坑
-
-- **`._element.rPr` 是 `None` 导致崩溃**：run 的 `rPr` 只有设过字体属性才存在，必须先 `run.font.name = ...` 再改 `rFonts`（见 2.1）
-- **只设 `font.name` 中文会回落**：中文要写 `w:eastAsia` 槽位，否则"宋体 + 黑体"要求不达标（见 2.1）
-- **`Table Grid` 不符合三线表规范**：它给全框线，学术表格要手写 `tcBorders`（见 2.2）
-- **matplotlib 负号显示成方框**：`axes.unicode_minus` 要设 `False`
-- **中文方框 / 缺字**：字体名写错或该平台没装，用 `fm.findfont(..., fallback_to_default=False)` 提前验证
-- **打开已有文档替换内容**：`add_*` 只会追加到末尾；要中间插入得操作底层 XML，先确认用户到底要什么
-- **整段替换丢格式**：一段文字常分散在多个 run 里；直接改 `p.text` 会丢格式，要逐 run 处理
-- **`.doc` / `.xls` 读不了**：这些库不支持旧二进制格式，先转换
-
-## 9. 交付前自检
-
-- [ ] 生成的文件**重开验证**过（docx 用 textutil，xlsx 用 `load_workbook`，pptx 用 `Presentation`）
-- [ ] 中文正常（无方框、字体槽位对）
-- [ ] 输入与输出路径都明确告知；**默认写新文件名**，不覆盖用户原文件
-- [ ] 明确告诉用户「这是文件级操作，你自己打开确认」，并说清哪些做不到（公式、目录、设计）
+- **`._element.rPr` 是 `None` 导致崩溃**：run 的 `rPr` 只有设过字体属性才存在 → 用样式，或先设 `font.name`（见第 1、2.1 节）。
+- **只设 `font.name` 中文回落**：中文必须写 `w:eastAsia`，四槽位一次设全（见 `set_run_fonts`）。
+- **内置样式主题字体覆盖你的设置**：记得 `pop` 掉 `w:asciiTheme` 等（见第 1 节）。
+- **`Table Grid` 不符合三线表规范**：它给全框线，要手写 `tcBorders`（见 2.3）。
+- **目录/交叉引用不更新**：是域，不是文本；生成后要按 F9。
+- **只改 `p.text` 丢格式**：一段文字常分散在多个 run，整段替换会丢格式，要逐 run 处理。
+- **`add_*` 只追加到末尾**：想在中间插入得操作底层 XML，先确认用户到底要什么。
+- **matplotlib 负号成方框**：`axes.unicode_minus = False`。
+- **中文方框/缺字**：字体名写错或该机没装 → `findfont(..., fallback_to_default=False)` 提前验证。
+- **改完没渲染目检就交付**：最危险的坑 —— 无方框、无回落的确认只能靠第 3 节的渲染-目检。
+- **交付默认写新文件名**：不覆盖用户原文件，并明确告知输入/输出路径。
