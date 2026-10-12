@@ -11,9 +11,10 @@
 > **按顺序执行，不要跳过：**
 >
 > 1. **取回仓库到临时目录**
->    - 有 git：`git clone --depth 1 {{REPO_URL}} ` 克隆到临时目录（macOS/Linux 用 `/tmp/agent-starter-kit`，Windows 用 `%TEMP%\agent-starter-kit`）
->      - 国内直连慢的话加加速前缀：`git clone --depth 1 https://gh-proxy.com/{{REPO_URL}}`
+>    - 有 git：`git clone --depth 1 https://github.com/tyiiiyt01/agent-starter-kit` 克隆到临时目录（macOS/Linux 用 `/tmp/agent-starter-kit`，Windows 用 `%TEMP%\agent-starter-kit`）
+>      - 国内直连慢的话加加速前缀：`git clone --depth 1 https://gh-proxy.com/https://github.com/tyiiiyt01/agent-starter-kit`
 >    - 没有 git：用你的网页抓取能力**逐个取回**本仓库文件，至少要有 `INSTALL.md`、`hosts.json`、`scripts/` 全部内容。缺文件就明确告诉用户，不要凭印象拼凑。
+>      - 网页取回地址示例：`https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/INSTALL.md`
 >
 > 2. **完整阅读 `INSTALL.md`** —— 那才是执行手册（六个 Step），本 README 只负责说明项目是什么。
 >
