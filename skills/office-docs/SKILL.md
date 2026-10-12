@@ -139,6 +139,16 @@ doc.settings.odd_and_even_pages_header_footer = True              # 奇偶页不
 - 页眉页脚常**奇偶页不同**；**自动目录**；图表**交叉引用**；参考文献 **GB/T 7714**
 - 各校有独立模板 → **让用户提供学校模板**，走模板路线最省事。
 
+### 2.7 本套件自带 3 个可用模板（`templates/docx/`）
+
+不用从零画：本套件已自带 3 个把字体/行距/页边距/页眉页脚/目录域/三线表**预先做进样式**的 `.docx` 模板，程序只做变量填充即可：
+
+- `templates/docx/report-zh.docx` —— 通用中文报告（实验报告 / 课程报告）
+- `templates/docx/gongwen-zh.docx` —— 党政机关公文（GB/T 9704—2012）
+- `templates/docx/thesis-zh.docx` —— 学位论文（各校共性要求）
+
+模板由 `scripts/make_templates.py` **脚本生成**（可审计、可改、可复现，幂等重跑），内含 docxtpl `{{ }}` / `{%tr %}` 占位符。**占位符清单、用法示例与已知限制（字体嵌入、目录 F9、仿宋_GB2312 缺失回落）见 `templates/docx/README.md`**。
+
 ## 3. 交付前的渲染-目检循环（最有价值的一步）
 
 程序**无法自证**"中文字体有没有回落""排版对不对"。**唯一可靠办法是渲染出来看**：

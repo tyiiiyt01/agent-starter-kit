@@ -14,7 +14,7 @@
 | 版本 / 分支 | 是否维护 | 说明 |
 |---|---|---|
 | `main` 分支 | ✅ 唯一维护 | 目前只有它在更新，安全修复只进这里 |
-| 已打标签的版本（如 `v0.2.4`） | ⚠️ 不单独维护 | 旧标签不会回补修复，需要修复请跟随最新 `main` 或最新标签 |
+| 已打标签的版本（如 `v0.2.5`） | ⚠️ 不单独维护 | 旧标签不会回补修复，需要修复请跟随最新 `main` 或最新标签 |
 
 - 只维护 **`main` 分支**。项目处于早期，没有并行的维护分支。
 - 建议**锁定版本**而不是一直追 `main`（见第四节），但若你锁定的是旧版本，安全修复不会自动回流到你那里 —— 需要你自行评估是否升级。
@@ -39,7 +39,7 @@
 - **复现步骤** —— 你执行了哪条命令 / 让 AI 做了什么，出现了什么
 - **宿主机（host）** —— 例如 Claude Code / Cursor / Trae / Trae CN / Reasonix / Codex，以及其他
 - **操作系统** —— macOS / Windows / Linux 及版本（如 macOS 15、Windows 11）
-- **脚本版本** —— 你用的是 `main` 还是某个标签（如 `v0.2.4`），以及 `git rev-parse HEAD` 的短哈希
+- **脚本版本** —— 你用的是 `main` 还是某个标签（如 `v0.2.5`），以及 `git rev-parse HEAD` 的短哈希
 - 相关日志、`state.json` 内容（**请先剔除路径里的用户名等个人信息**）
 - 涉及第三方技能（`--with-community`）的问题，也请注明是从哪个上游仓库克隆的
 
@@ -86,13 +86,13 @@
 要拿到确定、可复现的行为，请锁到某个标签：
 
 ```bash
-git clone --branch v0.2.4 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
+git clone --branch v0.2.5 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
 ```
 
-- `--branch v0.2.4`：锁定到具体版本，行为不再随 `main` 漂移
+- `--branch v0.2.5`：锁定到具体版本，行为不再随 `main` 漂移
 - `--depth 1`：只取这一版，下载更小更快
 
-> ℹ️ 用标签克隆时 git 可能打印一行 `warning: refs/tags/v0.2.4 ... is not a commit!`，
+> ℹ️ 用标签克隆时 git 可能打印一行 `warning: refs/tags/v0.2.5 ... is not a commit!`，
 > 紧跟着 `Note: switching to '<commit>'`。**这是正常的，不是错误** ——
 > 注解标签（annotated tag）本身是一个独立对象，git 解析后已正确切到对应提交。
 > 你会处于 detached HEAD 状态，对只读使用没有影响。

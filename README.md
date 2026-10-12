@@ -189,7 +189,7 @@ https://github.com/tyiiiyt01/agent-starter-kit 我要写毕业论文
 
 ```bash
 gh skill install tyiiiyt01/agent-starter-kit \
-  --all --agent claude-code --scope user --pin v0.2.4
+  --all --agent claude-code --scope user --pin v0.2.5
 ```
 
 `gh skill install` 支持 `--pin <tag|sha>`，可以钉到具体版本。
@@ -443,10 +443,10 @@ python3 scripts/apply.py --packs code --with-community all          # 全部 13 
 - **锁定版本**（想要可复现的行为时推荐）：
 
   ```bash
-  git clone --branch v0.2.4 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
+  git clone --branch v0.2.5 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
   ```
 
-  当前最新发布是 `v0.2.4`。`--branch v0.2.4` 把行为固定在那一版，不再随 `main` 漂移；`--depth 1` 只取这一版。
+  当前最新发布是 `v0.2.5`。`--branch v0.2.5` 把行为固定在那一版，不再随 `main` 漂移；`--depth 1` 只取这一版。
   变更记录见 [CHANGELOG.md](CHANGELOG.md)，为什么建议锁版本见 [SECURITY.md](SECURITY.md) 第 3.4 节。
 - **只是想补装某个包 / 技能**：直接说「再帮我装 `design` 包」或「加上 `anthropics-skills`」，不用整套重来。
 
@@ -494,11 +494,16 @@ agent-starter-kit/
 ├── templates/
 │   ├── AGENTS.md.template            ← 给你自己的项目用的 AGENTS.md 模板
 │   ├── claude-settings.json.template ← 权限白名单模板
-│   └── README.md                     ← 这两个模板怎么用
+│   ├── README.md                     ← 这两个模板怎么用
+│   └── docx/                         ← 可直接用的中文 .docx 模板（含 README）
+│       ├── report-zh.docx            ← 通用中文报告（实验报告 / 课程报告）
+│       ├── gongwen-zh.docx           ← 党政机关公文（GB/T 9704）
+│       └── thesis-zh.docx            ← 学位论文（各校共性要求）
 ├── scripts/
 │   ├── detect.py         ← 环境探测（只读）
 │   ├── apply.py          ← 幂等安装，支持 --dry-run / --tier / --minimal-mcp
 │   ├── doctor.py         ← 逐项自检，验证「能真的执行」
+│   ├── make_templates.py ← 重新生成上面那三个 .docx 模板（字节级可复现）
 │   ├── pin_commits.py    ← （维护者）刷新社区技能的 commit 锚点
 │   └── check_release.py  ← （维护者）发版前校验版本号一致性
 ├── packs/                ← 八个能力包定义 + SCHEMA.md（格式说明）

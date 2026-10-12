@@ -190,7 +190,7 @@ Your assistant probes the environment itself, matches a scenario, and prints a l
 
 ```bash
 gh skill install tyiiiyt01/agent-starter-kit \
-  --all --agent claude-code --scope user --pin v0.2.4
+  --all --agent claude-code --scope user --pin v0.2.5
 ```
 
 `gh skill install` supports `--pin <tag|sha>` to pin to a specific version.
@@ -441,10 +441,10 @@ Installation is **idempotent**: running it repeatedly won't reinstall, it only f
 - **Pin a version** (recommended when you want reproducible behavior):
 
   ```bash
-  git clone --branch v0.2.4 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
+  git clone --branch v0.2.5 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
   ```
 
-  The current latest release is `v0.2.4`. `--branch v0.2.4` pins behavior to that version so it no longer drifts with `main`; `--depth 1` fetches only that version.
+  The current latest release is `v0.2.5`. `--branch v0.2.5` pins behavior to that version so it no longer drifts with `main`; `--depth 1` fetches only that version.
   See [CHANGELOG.md](CHANGELOG.md) for the change log, and [SECURITY.md](SECURITY.md) section 3.4 for why pinning is recommended.
 - **Just adding a pack / skill**: just say "also install the `design` pack" or "add `anthropics-skills`" — no need to redo the whole thing.
 
@@ -491,11 +491,16 @@ agent-starter-kit/
 ├── templates/
 │   ├── AGENTS.md.template            ← an AGENTS.md template for your own project
 │   ├── claude-settings.json.template ← permission allowlist template
-│   └── README.md                     ← how to use these two templates
+│   ├── README.md                     ← how to use these two templates
+│   └── docx/                         ← ready-to-use Chinese .docx templates (with README)
+│       ├── report-zh.docx            ← generic Chinese report (lab / course report)
+│       ├── gongwen-zh.docx           ← Chinese official document (GB/T 9704)
+│       └── thesis-zh.docx            ← degree thesis (common requirements)
 ├── scripts/
 │   ├── detect.py         ← environment probing (read-only)
 │   ├── apply.py          ← idempotent install, supports --dry-run / --tier / --minimal-mcp
 │   ├── doctor.py         ← per-item self-check, verifying "it really runs"
+│   ├── make_templates.py ← regenerate the three .docx templates above (byte-reproducible)
 │   ├── pin_commits.py    ← (maintainers) refresh the commit pins for community skills
 │   └── check_release.py  ← (maintainers) verify version consistency before releasing
 ├── packs/                ← definitions of the eight capability packs + SCHEMA.md (format spec)

@@ -28,6 +28,50 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 
 ---
 
+## [0.2.5] - 2026-10-12
+
+> 把「docxtpl + 模板」这条正道**真正做出来** —— 此前只在技能文档里写了方法，没有可用的模板文件。
+
+### Added
+
+- **三个可直接用的中文 `.docx` 模板**（`templates/docx/`）：
+
+| 模板 | 用途 | 格式依据 |
+|---|---|---|
+| `report-zh.docx` | 通用中文报告（实验报告 / 课程报告） | A4，上下 2.54cm / 左右 3.17cm；正文宋体小四、1.5 倍行距、首行缩进 2 字符 |
+| `gongwen-zh.docx` | 党政机关公文 | **GB/T 9704—2012**：天头 37mm、订口 28mm、正文仿宋_GB2312 三号、固定行距 29pt |
+| `thesis-zh.docx` | 学位论文（各校共性要求） | 宋体小四正文、黑体标题（字号递减）、页眉、页码、目录占位页 |
+
+  - 每个都带 docxtpl 占位符（含表格行循环 `{%tr for row in rows %}`）与说明文档 `templates/docx/README.md`
+  - **用脚本生成而不是提交手搓的二进制**：可审计、可改、可复现
+
+- `scripts/make_templates.py` —— 重新生成上述模板。**字节级可复现**：会规范 zip 元数据（时间戳 / 权限位 / 条目顺序），所以重复运行得到逐字节相同的文件，不会在 git 里产生无意义 diff
+
+### Fixed
+
+- **`make_templates.py` 缺 `import zipfile`** —— 导致第一次运行就 `NameError` 崩溃。**但当时的"幂等"验证给出了假阳性**：两次运行落在同一个 2 秒窗口内（zip 时间戳精度是 2 秒），字节恰好相同，掩盖了崩溃。补上导入后**间隔 4 秒重测**才确认真的字节稳定
+- `make_templates.py` 的注释写「依赖: python-docx（见 requirements.txt）」—— 而 `requirements.txt` 里并没有它。已改为如实说明：它是**维护者脚本**的依赖，与「安装引擎自身依赖」不要混；用户侧要的 `docxtpl` + `python-docx` 已由 `office` / `writing` 能力包声明
+
+### 实测验证
+
+```
+三个模板：能重开 ✅ · 样式 173–174 个 ✅ · eastAsia=宋体/仿宋_GB2312 ✅
+          · 页码域（fldChar 三段）✅ · 首行缩进 firstLineChars=200 ✅
+          · 占位符 11–17 个（含表格行循环）✅
+幂等：间隔 4 秒重跑 → 三个模板逐字节相同 ✅
+端到端：模板 + docxtpl 渲染 → 生成文档可重开（13 段落 / 1 表格）✅
+```
+
+### 已知限制（模板说明里也写了）
+
+- **字体嵌入做不到** —— python-docx 不支持 `w:embedRegular`。要么在 Word 里手动勾「将字体嵌入文件」后另存，要么交付 PDF
+- **目录域不会自动更新** —— Word 目录是域，需打开后按 F9；模板里只能是占位
+- **仿宋_GB2312 / 楷体_GB2312 不是系统标配** —— 缺字体的机器会回落
+- 公文页码国标要求单双页左右不同，模板用的是居中；公文标题用「宋体加粗」近似「二号小标宋」
+- ⚠️ **未做渲染目检** —— 本机没有 LibreOffice，所以 `soffice → PDF → 看图` 那一步没实跑。格式参数是按规范写的，但**没有肉眼确认过渲染效果**
+
+---
+
 ## [0.2.4] - 2026-10-12
 
 > 一轮全面自检（机械检查 + 行为测试 + 新人眼评审）后修掉的问题。**其中两条是「安全声明名不副实」。**
@@ -225,7 +269,8 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 并在文件末尾补上对应的链接引用。
 -->
 
-[Unreleased]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.4...HEAD
+[Unreleased]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.5...HEAD
+[0.2.5]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/tyiiiyt01/agent-starter-kit/compare/v0.2.1...v0.2.2

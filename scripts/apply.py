@@ -37,7 +37,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-VERSION = "0.2.4"
+VERSION = "0.2.5"
 STATE_DIR = Path(os.path.expanduser("~")) / ".agent-starter-kit"
 STATE_FILE = STATE_DIR / "state.json"
 SHIM_DIR = STATE_DIR / "bin"
