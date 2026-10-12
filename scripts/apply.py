@@ -36,6 +36,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+VERSION = "0.1.0"
 STATE_DIR = Path(os.path.expanduser("~")) / ".agent-starter-kit"
 STATE_FILE = STATE_DIR / "state.json"
 SHIM_DIR = STATE_DIR / "bin"
@@ -185,6 +186,59 @@ def resolve_mcp_file(mcp: dict) -> Path | None:
     return expand(f) if f else None
 
 
+def discover_skill_dirs(spec: dict) -> list[Path]:
+    """展开 skills_discovery 通配符，找出候选技能目录。
+
+    用于工作区制的宿主（如 Reasonix）：技能目录在工作区内部，工作区名不固定，
+    没法写死路径，只能搜索。返回按修改时间倒序 —— 最近用过的排前面。
+    """
+    pattern = spec.get("skills_discovery")
+    if not pattern:
+        return []
+    # Path.glob 不吃展开后的绝对路径，所以拆成「锚点目录 + 尾部通配模式」
+    parts = Path(pattern).parts
+    if len(parts) <= 3:
+        return []
+    anchor = expand(str(Path(*parts[:-3])))
+    if not anchor.is_dir():
+        return []
+    try:
+        hits = sorted(anchor.glob("/".join(parts[-3:])),
+                      key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError:
+        return []
+    return [h for h in hits if h.is_dir()]
+
+
+class AmbiguousSkillsDir(Exception):
+    """发现多个候选技能目录，无法自动决定装进哪一个。
+
+    典型场景：工作区制宿主（Reasonix）有多个工作区，每个都有自己的技能目录。
+    这时必须让用户指定，不能按修改时间瞎猜 —— 猜错的话用户在自己工作区里看不到技能。
+    """
+
+    def __init__(self, host: str, candidates: list[Path]):
+        self.host = host
+        self.candidates = candidates
+        super().__init__(host)
+
+
+def resolve_skills_root(spec: dict, override: str | None = None) -> Path:
+    """决定技能装到哪。
+
+    优先级：显式 override > skills_discovery 找到的唯一目录 > 静态 skills[0]。
+    找到多个候选时抛 AmbiguousSkillsDir，由调用方要求用户指定。
+    """
+    if override:
+        return expand(override)
+    found = discover_skill_dirs(spec)
+    if len(found) == 1:
+        return found[0]
+    if len(found) > 1:
+        raise AmbiguousSkillsDir(spec.get("display", "未知宿主"), found)
+    return expand(spec["skills"][0])
+
+
 def load_packs(names: list[str]) -> dict:
     packs = {}
     for name in names:
@@ -264,10 +318,11 @@ def collect_cli_deps(pack_names: list[str], packs: dict) -> list[dict]:
     return out
 
 
-def plan_skills(pack_names: list[str], packs: dict, target_hosts: dict) -> list[dict]:
+def plan_skills(pack_names: list[str], packs: dict, target_hosts: dict,
+                skill_dir: str | None = None) -> list[dict]:
     actions = []
     for host_name, spec in target_hosts.items():
-        dest_root = expand(spec["skills"][0])
+        dest_root = resolve_skills_root(spec, skill_dir)
         for pack_name in pack_names:
             for skill in packs[pack_name].get("skills", []):
                 src = ROOT / "skills" / skill
@@ -288,16 +343,24 @@ def plan_mcp(pack_names: list[str], packs: dict, target_hosts: dict,
     实测 3 个 MCP 可吃掉 200k 上下文里的 143k，装多了 agent 会变笨。
     """
     actions = []
+    seen: set[tuple[str, str]] = set()
     for host_name, spec in target_hosts.items():
         mcp = spec["mcp"]
         for pack_name in pack_names:
             for server in packs[pack_name].get("mcp", []):
                 if minimal and not server.get("essential"):
                     continue
+                # 多个包会声明同一个 server（如 filesystem），这里就去重，
+                # 否则同一个 MCP 会被安装两次、报告里出现「已写入」紧跟「已存在，跳过」
+                sig = (host_name, server["name"])
+                if sig in seen:
+                    continue
+                seen.add(sig)
                 actions.append({
                     "kind": "mcp", "host": host_name, "server": server,
                     "strategy": mcp["strategy"], "cmd": mcp.get("cmd"),
                     "file": str(resolve_mcp_file(mcp) or ""), "key": mcp.get("key"),
+                    "shape": mcp.get("shape"),
                     "verified": spec.get("verified"),
                 })
     return actions
@@ -311,7 +374,8 @@ def load_community() -> dict:
     return read_json(path, {}).get("skills", [])
 
 
-def plan_community(entries: list[dict], only: list[str], target_hosts: dict) -> list[dict]:
+def plan_community(entries: list[dict], only: list[str], target_hosts: dict,
+                   skill_dir: str | None = None) -> list[dict]:
     out = []
     for e in entries:
         if only and e["id"] not in only:
@@ -319,7 +383,8 @@ def plan_community(entries: list[dict], only: list[str], target_hosts: dict) -> 
         for host_name, spec in target_hosts.items():
             out.append({
                 "kind": "community", "host": host_name, "entry": e,
-                "dest_root": str(expand(spec["skills"][0])),
+                # 必须和普通技能用同一个解析结果，否则同一宿主会装到两个不同目录
+                "dest_root": str(resolve_skills_root(spec, skill_dir)),
             })
     return out
 
@@ -415,9 +480,15 @@ def do_mcp(action: dict, state: dict) -> str:
 
     if action["strategy"] == "json":
         path = Path(action["file"])
+        if not action["file"]:
+            return _emit_manual(host_name, server,
+                                "hosts.json 里这个宿主没声明 mcp.file，无法写入")
         data = read_json(path, {})
         key = action["key"] or "mcpServers"
         existing = data.setdefault(key, {})
+        if not isinstance(existing, dict):
+            return _emit_manual(host_name, server,
+                                f"配置里 [{key}] 不是字典结构，与预期不符，已跳过以免写坏文件")
         if name in existing:
             return f"已存在，跳过 {name} → {path}"
         existing[name] = {"command": server["command"], "args": srv_args}
@@ -439,22 +510,50 @@ def do_mcp(action: dict, state: dict) -> str:
                 "为安全起见不手工拼接 TOML，请手动粘贴下面的配置段，或先装 tomli-w 后重跑。")
         try:
             import tomllib
+        except ImportError:
+            # Python < 3.11 没有 tomllib，回退到第三方 tomli（同一套 API）
+            try:
+                import tomli as tomllib  # type: ignore
+            except ImportError:
+                return _emit_manual(
+                    host_name, server,
+                    "读 TOML 需要 Python 3.11+ 的 tomllib，或 pip install tomli。"
+                    "两者都没有，无法安全读写这个配置文件。")
+        try:
             path = Path(action["file"])
             data = tomllib.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
         except Exception as exc:  # noqa: BLE001
             return _emit_manual(host_name, server, f"读取 TOML 失败: {exc}")
-        section = data.setdefault(action["key"] or "mcp_servers", {})
-        if name in section:
-            return f"已存在，跳过 {name} → {action['file']}"
-        section[name] = {"command": server["command"], "args": srv_args}
+
+        key = action["key"] or "mcp_servers"
+        shape = action.get("shape") or "table"
+        entry_body = {"command": server["command"], "args": srv_args}
         if srv_env:
-            section[name]["env"] = srv_env
+            entry_body["env"] = srv_env
+
+        if shape == "array":
+            # 数组表（如 Reasonix 的 [[plugins]]）：每个条目一个块，不是 name→{} 字典
+            section = data.setdefault(key, [])
+            if not isinstance(section, list):
+                return _emit_manual(
+                    host_name, server,
+                    f"配置里的 [{key}] 不是数组表，但 hosts.json 声明 shape=array。"
+                    f"结构不符，为避免写坏配置文件已跳过。请人工确认 {path} 的实际结构。")
+            if any(isinstance(e, dict) and e.get("name") == name for e in section):
+                return f"已存在，跳过 {name} → {action['file']}"
+            section.append({"name": name, **entry_body})
+        else:
+            section = data.setdefault(key, {})
+            if name in section:
+                return f"已存在，跳过 {name} → {action['file']}"
+            section[name] = entry_body
+
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(tomli_w.dumps(data), encoding="utf-8")
-        entry = {"host": host_name, "server": name, "path": str(path)}
+        entry = {"host": host_name, "server": name, "path": str(path), "shape": shape}
         if entry not in state["mcp"]:
             state["mcp"].append(entry)
-        return f"已合并写入 {name} → {path}"
+        return f"已合并写入 {name} → {path}（{shape}）"
 
     return _emit_manual(host_name, server, f"未知策略: {action['strategy']}")
 
@@ -541,7 +640,7 @@ def do_cli_dep(dep: dict, tier_limit: int, state: dict) -> str:
 def render_plan(skills, mcps, py_deps, cli_deps, packs, pack_names, python_exe, tier_limit,
                 community=None, minimal_mcp=False, mirrors=True, gh_proxy="auto") -> str:
     community = community or []
-    L = ["即将执行以下操作：", ""]
+    L = [f"agent-starter-kit v{VERSION} —— 即将执行以下操作：", ""]
 
     by_host: dict[str, list[dict]] = {}
     for a in skills:
@@ -668,6 +767,11 @@ def main() -> int:
     ap.add_argument("--gh-proxy", default="auto",
                     help="GitHub 加速前缀。'auto' 多路回退，'' 只用直连，或指定单个镜像")
     ap.add_argument("--no-mirrors", action="store_true", help="不生成 mirrors.env（国内加速环境变量）")
+    ap.add_argument("--skill-dir", default=None,
+                    help="显式指定技能投放目录。工作区制宿主（如 Reasonix）有多个工作区时必须给")
+    ap.add_argument("--force-unverified", action="store_true",
+                    help="允许写入未经核实的宿主路径。"
+                         "默认拒绝 —— 必须先向用户确认真实路径，确认后才加这个开关")
     args = ap.parse_args()
 
     pack_names = [p.strip() for p in args.packs.split(",") if p.strip()]
@@ -688,16 +792,65 @@ def main() -> int:
         print("    请用 --hosts <名字> 显式指定，或让用户确认他用的哪个助手。")
         return 2
 
+    # 未核实宿主：默认拒绝写入，除非用户已确认过要写的位置。
+    # 判定粒度分开：
+    #   · 技能目录 —— 给了 --skill-dir 就算已确认（用户点名了路径）
+    #   · MCP 配置 —— 无法用参数指定路径，只能靠 --force-unverified
+    # 在「装到什么位置」这种不可逆操作上，不能只靠文档提醒 agent 自觉。
+    writes_mcp = any(packs[p].get("mcp") for p in pack_names)
+    needs_confirm = {}
+    for h, s in target_hosts.items():
+        if s.get("verified") is True:
+            continue
+        reasons = []
+        if not args.skill_dir:
+            reasons.append("技能目录")
+        if writes_mcp and not args.force_unverified:
+            reasons.append("MCP 配置")
+        if reasons and not args.force_unverified:
+            needs_confirm[h] = (s, reasons)
+
+    if needs_confirm and not args.dry_run:
+        print("[!] 以下宿主的路径未经核实，已停止以免写错位置：")
+        for h, (s, reasons) in needs_confirm.items():
+            print(f"      {h}（{s.get('display')}）  verified={s.get('verified')}"
+                  f"  待确认：{'、'.join(reasons)}")
+            if s.get("confirm_hint"):
+                print(f"        怎么确认：{s['confirm_hint']}")
+            print(f"        推测路径：{s['skills'][0]}  |  MCP: {resolve_mcp_file(s['mcp'])}")
+        print()
+        print("    请先让用户确认真实路径，然后：")
+        print("      · 技能目录用 --skill-dir <路径> 指定")
+        print("      · MCP 路径确认后加 --force-unverified 放行")
+        print("    （只想看看会做什么，可以先加 --dry-run，它不会写任何东西。）")
+        return 3
+
+    if unverified := {h: s for h, s in target_hosts.items() if s.get("verified") is not True}:
+        if args.force_unverified and not args.dry_run:
+            print(f"[i] 已用 --force-unverified 放行未核实宿主: {', '.join(unverified)}")
+            print()
+
     python_exe = resolve_python_exe()
     tier_limit = 0 if args.tier == "none" else TIER_ORDER[args.tier]
 
-    skills = plan_skills(pack_names, packs, target_hosts)
-    mcps = plan_mcp(pack_names, packs, target_hosts, minimal=args.minimal_mcp)
+    try:
+        skills = plan_skills(pack_names, packs, target_hosts, args.skill_dir)
+        mcps = plan_mcp(pack_names, packs, target_hosts, minimal=args.minimal_mcp)
+        only = [] if args.with_community in ("", "all") else [x.strip() for x in args.with_community.split(",")]
+        community = (plan_community(load_community(), only, target_hosts, args.skill_dir)
+                     if args.with_community else [])
+    except AmbiguousSkillsDir as exc:
+        print(f"[!] {exc.host} 上找到多个候选技能目录，无法自动决定：")
+        for c in exc.candidates:
+            print(f"      {c}")
+        print()
+        print("    这是工作区制宿主（如 Reasonix）的正常情况 —— 每个工作区各有独立技能目录。")
+        print("    请用户确认当前用哪个工作区，然后用 --skill-dir 指定，例如：")
+        print(f"      python3 scripts/apply.py --packs <包> --skill-dir '{exc.candidates[0]}'")
+        return 4
+
     py_deps = [] if args.no_python_deps else collect_python_deps(pack_names, packs)
     cli_deps = [] if args.no_cli else collect_cli_deps(pack_names, packs)
-
-    only = [] if args.with_community in ("", "all") else [x.strip() for x in args.with_community.split(",")]
-    community = plan_community(load_community(), only, target_hosts) if args.with_community else []
 
     if args.dry_run:
         print(render_plan(skills, mcps, py_deps, cli_deps, packs, pack_names,
@@ -731,7 +884,7 @@ def main() -> int:
 
     save_state(state)
 
-    print(f"安装完成（能力包: {', '.join(pack_names)}｜宿主: {', '.join(target_hosts) or '无'}）")
+    print(f"agent-starter-kit v{VERSION} 安装完成（能力包: {', '.join(pack_names)}｜宿主: {', '.join(target_hosts) or '无'}）")
     print()
     for line in results:
         print("  " + line)

@@ -1,0 +1,38 @@
+# agent-starter-kit
+
+> 把仓库地址粘给你的 AI 助手（Claude Code / Cursor / Trae / Trae CN / Reasonix / Codex），它就自动装好 17 个技能、注册 MCP 工具、装 Python 依赖 —— 面向大学生与办公人群。
+
+本文件是给 AI 的**只读地图**：告诉你该去读哪些文件。
+行为约束与执行入口在 [AGENTS.md](AGENTS.md)，具体步骤在 [INSTALL.md](INSTALL.md)。
+
+## Docs
+
+- [AGENTS.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/AGENTS.md): **如果用户把本仓库地址发给你，先读这个。** 行为约束、允许自行判断的边界、禁止事项、特殊情况处理
+- [INSTALL.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/INSTALL.md): 执行手册。Step 0 前置检查 → Step 1 环境探测 → Step 2 定能力包 → Step 3 打印清单等确认 → Step 4 安装 → Step 5 自检 → Step 6 配置用户项目的 AGENTS.md
+- [requirements.txt](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/requirements.txt): 安装引擎自身的依赖（`tomli-w` 用于写 TOML 宿主配置）。**建议先装**，否则 Reasonix / Codex 的 MCP 只能降级为手动粘贴
+- [README.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/README.md): 给人看的门面。能力清单、支持的宿主、快速开始、FAQ
+- [uninstall.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/uninstall.md): 卸载指引。只删账本里记录过的条目，不碰用户自己的配置
+- [SECURITY.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/SECURITY.md): 安全披露政策与本项目的风险边界
+- [presets.json](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/presets.json): 场景预设 —— 拿用户原话去匹配 `trigger`，决定装哪些能力包
+- [hosts.json](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/hosts.json): 宿主适配表。技能目录、MCP 配置路径、写入策略；含未核实路径的标注
+- [packs/SCHEMA.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/packs/SCHEMA.md): 能力包的数据格式。字段名写错会被静默忽略
+- [community-skills.json](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/community-skills.json): 社区高星技能索引（带 star 与许可证风险）。默认不装
+- [CHANGELOG.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/CHANGELOG.md): 版本变更记录
+
+## Optional
+
+- [templates/AGENTS.md.template](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/templates/AGENTS.md.template): 给**用户自己的项目**生成 AGENTS.md 时用的模板（60 行以内）
+- [templates/claude-settings.json.template](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/templates/claude-settings.json.template): Claude Code 权限白名单模板（allow 安全命令 + deny 屏蔽 .env）
+- [templates/README.md](https://raw.githubusercontent.com/tyiiiyt01/agent-starter-kit/main/templates/README.md): 上面两个模板的用法说明
+- [packs/](https://github.com/tyiiiyt01/agent-starter-kit/tree/main/packs): 八个能力包定义（code / research / math-modeling / writing / office / office-work / study / design）
+- [scripts/](https://github.com/tyiiiyt01/agent-starter-kit/tree/main/scripts): detect.py（只读探测）· apply.py（幂等安装）· doctor.py（逐项自检）
+
+## 关键约束（摘要，完整版见 AGENTS.md）
+
+- **唯一硬前置是 Python 3**。缺了就停下来引导用户安装，不要继续
+- 安装前必须先 `--dry-run` 打印清单，**等用户明确确认**才动手
+- **不写系统级配置，不用管理员权限**，一律装到用户目录
+- **不改 `skills/` 里技能文件的内容** —— 必须逐字节一致
+- **不要主动加装 MCP** —— MCP 极吃上下文（实测 3 个可占 72% 的 200k 上下文）
+- 大件依赖（LibreOffice 等 heavy 档）**永不自动安装**
+- 装完由 `doctor.py` 判定成败，**不要跳过**

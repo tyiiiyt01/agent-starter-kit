@@ -127,15 +127,54 @@ def probe_hosts(hosts: dict) -> dict:
             "detect_hits": hits,
             "skills_dir": [str(expand(p)) for p in spec["skills"]],
             "skills_dir_exists": any(expand(p).exists() for p in spec["skills"]),
-            "mcp_file": str(resolve_mcp_file(spec["mcp"]) or ""),
-            "mcp_file_exists": bool(resolve_mcp_file(spec["mcp"]) and resolve_mcp_file(spec["mcp"]).exists()),
+            "mcp_file": "",
+            "mcp_file_exists": False,
             "mcp_strategy": spec["mcp"]["strategy"],
+            "mcp_shape": spec["mcp"].get("shape", "table"),
         }
+        mf = resolve_mcp_file(spec["mcp"])
+        if mf:
+            entry["mcp_file"] = str(mf)
+            entry["mcp_file_exists"] = mf.exists()
+
+        # 工作区制宿主（如 Reasonix）：技能目录在工作区内部，路径不固定，
+        # 需要用 skills_discovery 通配符搜索，把候选全部列出来。
+        # agent 据此让用户挑当前工作区 —— 不能用 --skill-dir 之前必须先问。
+        if spec.get("skills_discovery"):
+            entry["skills_discovery"] = spec["skills_discovery"]
+            candidates = discover_skill_dirs(spec)
+            entry["skills_candidates"] = [str(c) for c in candidates]
+            entry["skills_ambiguous"] = len(candidates) > 1
+            if len(candidates) > 1:
+                entry["skills_note"] = (
+                    f"找到 {len(candidates)} 个候选技能目录，必须让用户指定装进哪一个"
+                    f"（用 apply.py --skill-dir <路径>），不要按修改时间猜"
+                )
+
         if hits:
             found[name] = entry
         else:
             missing[name] = entry
     return {"found": found, "missing": missing}
+
+
+def discover_skill_dirs(spec: dict) -> list:
+    """展开 skills_discovery 通配符。与 apply.py 保持同一实现 —— 见那里的注释。"""
+    pattern = spec.get("skills_discovery")
+    if not pattern:
+        return []
+    parts = Path(pattern).parts
+    if len(parts) <= 3:
+        return []
+    anchor = expand(str(Path(*parts[:-3])))
+    if not anchor.is_dir():
+        return []
+    try:
+        hits = sorted(anchor.glob("/".join(parts[-3:])),
+                      key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError:
+        return []
+    return [h for h in hits if h.is_dir()]
 
 
 # --------------------------------------------------------------------------

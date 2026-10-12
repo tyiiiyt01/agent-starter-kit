@@ -26,8 +26,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 STATE_FILE = Path(os.path.expanduser("~")) / ".agent-starter-kit" / "state.json"
 _OS_KEY = {"darwin": "darwin", "windows": "win32", "linux": "linux"}
-
 OK, FAIL, WARN, INFO = "✅", "❌", "⚠️ ", "·"
+
+
+# --------------------------------------------------------------------------
+# 复用 apply.py 的路径解析
+# --------------------------------------------------------------------------
+# 必须复用，不能各写一份 —— 曾经因为 doctor 自己写死 skills[0] 而 apply 走
+# skills_discovery，导致「技能装好了但 doctor 报未安装」的假失败。
+def _load_apply():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_ask_apply", Path(__file__).resolve().parent / "apply.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_apply = _load_apply()
 
 
 # --------------------------------------------------------------------------
@@ -255,23 +271,37 @@ def check_skills(hosts: dict, expected_packs: list[str]) -> tuple[bool, list[tup
     for host_name, spec in hosts.items():
         if not any(expand(p).exists() for p in spec["detect"]):
             continue
-        dest_root = expand(spec["skills"][0])
-        if not dest_root.exists():
+        # 复用 apply.py 的解析逻辑（含 skills_discovery 与工作区制候选）。
+        # 找到多个候选时逐个校验，任一命中即算成功 —— 因为 apply 装之前会
+        # 先中止并要求用户用 --skill-dir 指定，用户选的那个就在候选里。
+        try:
+            found = _apply.discover_skill_dirs(spec)
+            dest_root = found[0] if found else _apply.resolve_skills_root(spec)
+            candidates = found or [dest_root]
+            ambiguous = len(found) > 1
+        except Exception:  # noqa: BLE001
+            dest_root, candidates, ambiguous = expand(spec["skills"][0]), [expand(spec["skills"][0])], False
+
+        if not any(c.exists() for c in candidates):
             rows.append((f"{host_name} @ {dest_root}", False, "技能目录不存在，未投放"))
             continue
+
         bad = []
         for skill in sorted(pack_skills):
-            target = dest_root / skill
-            if not target.exists():
+            hit = next((c for c in candidates if (c / skill).exists()), None)
+            if hit is None:
                 bad.append(f"{skill}(未安装)")
                 continue
-            good, msg = validate_skill_dir(target)
+            good, msg = validate_skill_dir(hit / skill)
             if not good:
                 bad.append(f"{skill}({msg})")
+        label = f"{host_name} @ {dest_root}"
+        if ambiguous:
+            label += f"  (候选 {len(candidates)} 个，已逐个检查)"
         if bad:
-            rows.append((f"{host_name} @ {dest_root}", False, "; ".join(bad)))
+            rows.append((label, False, "; ".join(bad)))
         else:
-            rows.append((f"{host_name} @ {dest_root}", True, f"{len(pack_skills)} 个技能全部就位"))
+            rows.append((label, True, f"{len(pack_skills)} 个技能全部就位"))
             any_ok = True
     return any_ok, rows
 
@@ -312,7 +342,30 @@ def check_mcp(hosts: dict, expected_packs: list[str]) -> list[tuple[str, bool, s
         names: list[str] = []
         if mcp.get("format") == "toml" or str(path).endswith(".toml"):
             key = mcp.get("key", "mcp_servers")
-            names = re.findall(rf"^\s*\[{re.escape(key)}\.([^\]]+)\]", raw, re.M)
+            if mcp.get("shape") == "array":
+                # 数组表形式（如 Reasonix 的 [[plugins]]）：
+                # 结构是 [{name="x", command=...}, ...]，不能靠正则找 [key.name] 子表。
+                # 必须真的解析 TOML —— 否则会把「写成功了」误报成「没有任何 server」。
+                try:
+                    import tomllib
+                    data = tomllib.loads(raw)
+                except ImportError:
+                    rows.append((f"{host_name} MCP", False,
+                                 "需要 Python 3.11+ 的 tomllib 才能校验数组表 TOML"))
+                    continue
+                except Exception as exc:  # noqa: BLE001
+                    rows.append((f"{host_name} MCP", False, f"{path} 不是合法 TOML: {exc}"))
+                    continue
+                section = data.get(key)
+                if isinstance(section, list):
+                    names = [e.get("name", "?") for e in section if isinstance(e, dict)]
+                else:
+                    rows.append((f"{host_name} MCP", False,
+                                 f"hosts.json 声明 shape=array，但配置里的 [{key}] 不是数组表"))
+                    continue
+            else:
+                # 字典表形式（如 [mcp_servers.xxx]）
+                names = re.findall(rf"^\s*\[{re.escape(key)}\.([^\]]+)\]", raw, re.M)
         else:
             try:
                 data = json.loads(raw)

@@ -45,6 +45,18 @@ python -V       # Windows 次选
 
 ## Step 1 — 探测环境
 
+**顺便把安装器自己的依赖装上**（很小，只有一个包，但装上才体验完整）：
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple   # 国内
+```
+
+不装也能跑 —— 只是 Reasonix / Codex 这类 **TOML 宿主**的 MCP 会降级成「给你一段配置让你手动粘贴」。
+如果你的 `hosts.found` 里有这两个宿主，建议装上。
+
+然后探测：
+
 ```bash
 python3 scripts/detect.py --json
 ```
@@ -59,6 +71,22 @@ python3 scripts/detect.py --json
 | `hosts.found[*].skills_dir_exists` | `false` 表示目录还不存在，需要创建（正常） |
 | `hosts.found[*].mcp_file_exists` | `false` 表示该宿主还没配过 MCP，需要新建（正常） |
 | `toolchain` | `node` / `git` / `uv` / `clang++` / `g++` / `cl` / `matlab` / `octave` |
+| `skills_candidates` | **只在工作区制宿主出现**。候选技能目录列表，见下 |
+| `skills_ambiguous` | `true` 表示有多个候选，**必须让用户选**，不许自己猜 |
+| `mcp_shape` | `array` 表示该宿主的 MCP 配置是数组表（如 Reasonix 的 `[[plugins]]`） |
+
+### 工作区制宿主（如 Reasonix）：必须先问用户
+
+某些宿主的技能目录**在工作区内部**，而工作区名不固定 —— 例如 Reasonix 是 `~/.reasonix/<工作区>/.reasonix/skills/`。
+
+`detect.py` 会把这些候选全列在 `skills_candidates` 里。**如果 `skills_ambiguous` 为 `true`：**
+
+1. **不要按修改时间猜**（脚本也被设计成不会猜 —— 它会直接中止）
+2. 问用户：
+   > 你有 N 个 Reasonix 工作区：A、B、C。技能要装进**当前在用的**那个 —— 是哪个？
+3. 拿到答案后，用 `--skill-dir <该工作区的 .reasonix/skills 路径>` 指定
+
+> 为什么不让脚本自动挑？挑错了用户在自己工作区里根本看不到技能，而脚本还以为装成功了。宁可停下来问一句。
 
 **`hosts.found` 为空怎么办？** 一个宿主都没检出。不要直接失败 —— 依次问用户：
 
@@ -96,7 +124,7 @@ python3 scripts/detect.py --json
 | 上班 / 办公 / 报表 / 会议 / 周报 | `office` `office-work` | presets.office |
 | 科研 / 发论文 / 投期刊 / 做实验 | `research` `writing` `math-modeling` | presets.research |
 | C++ / 编程 / 实验报告 / 课程设计 | `code` `study` `writing` | presets.engineering |
-| 都要 / 全套 | 七个全装 | presets.all |
+| 都要 / 全套 | 八个全装 | presets.all |
 
 **规则：**
 
@@ -197,7 +225,20 @@ python3 scripts/apply.py --packs <选定的包> --tier medium --dry-run   # 需�
 python3 scripts/apply.py --packs <选定的包>                       # 常规
 python3 scripts/apply.py --packs <选定的包> --tier medium          # 需要建模/统计/翻译时
 python3 scripts/apply.py --packs <选定的包> --no-cli --no-python-deps   # 只投技能和 MCP，不碰依赖
+python3 scripts/apply.py --packs <选定的包> --skill-dir <路径>     # 工作区制宿主必须指定（见 Step 1）
+python3 scripts/apply.py --packs <选定的包> --force-unverified     # 用户确认过未核实宿主的路径后
 ```
+
+### ⛔ 两个脚本会主动拦住你 —— 这是设计，不是故障
+
+| 退出码 | 触发条件 | 你要做什么 |
+|---|---|---|
+| `3` | 目标宿主 `verified` 不是 `true`，且你没给 `--skill-dir` 或 `--force-unverified` | **停下问用户真实路径**，拿到答案后带上对应参数重跑。**不要绕过它** |
+| `4` | 工作区制宿主有多个候选技能目录 | 问用户当前用哪个工作区，然后用 `--skill-dir` 指定 |
+
+这两个守卫的存在理由是：**"装到哪个位置"是不可逆操作，不能只靠 agent 自觉。** 以前只写在文档里，现在由脚本强制。
+
+> 用户只想看看会做什么？加 `--dry-run` —— 它不写任何东西，所以不会被这两个守卫拦住。
 
 特性说明（你不用实现，脚本已保证）：
 

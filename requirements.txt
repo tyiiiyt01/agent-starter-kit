@@ -1,0 +1,24 @@
+# agent-starter-kit 安装引擎自身需要的 Python 依赖
+#
+# 注意：这里放的是「安装器自己要用的」依赖，不是能力包的依赖。
+# 能力包（code / research / office ...）的依赖记在 packs/*.json 里，由 apply.py 按需安装。
+#
+# 装法：
+#   pip install -r requirements.txt
+#   # 国内网络慢的话：
+#   pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+tomli-w
+# 用途：写 TOML 格式的宿主配置。
+#   - Reasonix 的 MCP 配置在 ~/.reasonix/config.toml 的 [[plugins]] 数组表里
+#   - Codex CLI 的 MCP 配置在 ~/.codex/config.toml 的 [mcp_servers.*] 里
+#
+# 不装也能跑：缺 tomli-w 时，安装器不会去手工拼接 TOML（那样容易写坏用户的配置文件），
+# 而是把这两个宿主的 MCP 降级成「给你一段配置让你手动粘贴」。
+# 想过上自动写入的体验，就装上它。
+
+tomli; python_version < "3.11"
+# 用途：Python 3.11 之前的标准库没有 tomllib，读 TOML 需要它。
+# Python 3.11+ 自带 tomllib，这一条会被自动跳过（靠 environment marker）。
+#
+# ⚠️ 所以：Python 3.8–3.10 也能用，但要装 tomli/tomli-w 才能自动读写 TOML 宿主配置。

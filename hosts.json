@@ -8,12 +8,14 @@
     "confirm_hint": "让用户在该宿主里操作哪一步可以读到真实路径"
   },
 
-  "globals": {
+  "_conventions": {
+    "_note": "这里是【约定说明】，不是配置项 —— 脚本不会读它，写在这里是为了让改这个文件的人（或 agent）看到规矩。",
     "skillInstallMethod": "copy",
-    "_why": "Windows 创建符号链接需要管理员权限或开发者模式，为跨平台一致统一使用复制",
+    "_why_copy": "Windows 创建符号链接需要管理员权限或开发者模式，为跨平台一致统一使用复制",
     "encoding": "utf-8",
-    "_encoding_why": "Windows 默认可能是 GBK，写 JSON/Markdown 一律显式 UTF-8 且不带 BOM，否则中文乱码、配置解析失败",
-    "never_write_json_by_hand_if_strategy_is_cli": true
+    "_why_utf8": "Windows 默认可能是 GBK，写 JSON/Markdown 一律显式 UTF-8 且不带 BOM，否则中文乱码、配置解析失败",
+    "never_write_json_by_hand_if_strategy_is_cli": true,
+    "_why_cli": "strategy=cli 的宿主（Claude Code）其配置文件是混合大文件，必须走它自己的命令行写入"
   },
 
   "hosts": {
@@ -81,16 +83,20 @@
     "reasonix": {
       "display": "Reasonix",
       "verified": "partial",
-      "_verified_detail": "真机已确认 ~/.reasonix/config.toml 存在（TOML 格式）；skills 目录未经核实。",
+      "_verified_detail": "真机探测结论：Reasonix 是【工作区制】—— 技能目录在工作区内部的 .reasonix/skills/，例如 ~/.reasonix/global-workspace/.reasonix/skills/；MCP 配置在 ~/.reasonix/config.toml 的 [[plugins]] 段（数组表，不是字典）；工作区自己还有一份 <workspace>/reasonix.toml。因为不同工作区各有独立技能目录，装之前必须问用户当前用哪个工作区。",
       "detect": ["~/.reasonix"],
-      "skills": ["~/.reasonix/skills"],
+      "skills": ["~/.reasonix/global-workspace/.reasonix/skills"],
+      "skills_discovery": "~/.reasonix/*/.reasonix/skills",
+      "_skills_discovery_note": "因为工作区名不固定，用通配符搜索候选目录。detect.py 会把找到的全部列出来，让 agent 或用户挑当前那个。",
       "mcp": {
         "strategy": "toml",
         "file": "~/.reasonix/config.toml",
-        "key": "mcp_servers",
-        "format": "toml"
+        "key": "plugins",
+        "format": "toml",
+        "shape": "array",
+        "_shape_note": "Reasonix 的 [[plugins]] 是【数组表】（每个插件一个 [[plugins]] 块），不是 name→{...} 的字典。shape=array 时按追加条目处理。"
       },
-      "confirm_hint": "让用户确认 Reasonix 的技能目录与 MCP 配置段名"
+      "confirm_hint": "问用户当前用哪个 Reasonix 工作区（技能要装进那个工作区的 .reasonix/skills/）；MCP 配置段名确认是 [[plugins]]"
     },
 
     "codex": {

@@ -1,33 +1,88 @@
-# agent-starter-kit — 给大学生和办公人群的 AI 助手一键配置包
+# agent-starter-kit — 把 AI 助手，一次配置成能干活的搭子
+
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](#支持哪些宿主)
+[![Hosts](https://img.shields.io/badge/%E5%AE%BF%E4%B8%BB-6%20%E7%A7%8D-brightgreen.svg)](#支持哪些宿主)
+[![Stars](https://img.shields.io/github/stars/tyiiiyt01/agent-starter-kit)](https://github.com/tyiiiyt01/agent-starter-kit)
 
 > 🤖 **如果你是 AI 助手**：用户把本仓库地址发给你，是希望你在他的机器上完成安装。
 > 请先读 [`AGENTS.md`](AGENTS.md)（行为约束），再按 [`INSTALL.md`](INSTALL.md)（执行手册）操作。
+> 只想要一份文件索引的话，直接读 [`llms.txt`](llms.txt)。
 >
 > 👤 人类读者直接往下看即可 —— 你不需要懂命令行。
 
+> **Python 版本说明**：3.8+ 都能跑。但如果你用的是 **Reasonix 或 Codex**，要让安装器自动写它们的 TOML 配置，需要 Python **3.11+**（标准库 `tomllib`）并装上 [`requirements.txt`](requirements.txt) 里的依赖；否则这两个宿主的 MCP 会降级成「给你一段配置手动粘贴」。
+
 ---
 
-## 这是什么
+把你自己那个 AI 助手接好 API，然后把本仓库地址**粘到对话框**：
 
-帮你把手上那个 AI 助手（Claude Code / Cursor / Trae / Reasonix / Codex…）**一次配置到位**，装上大学生和办公人群真正用得上的能力：
+```console
+$ # 复制下面这一行，粘进对话框发送（不用敲终端）
+$ https://github.com/tyiiiyt01/agent-starter-kit
+🤖 助手：收到。先探测一下你的环境……
+   ✓ 检测到 Claude Code（macOS）
+   ✓ Python 3.11 · Node.js 20 · uv 已就绪
+🤖 助手：根据你说的用途，我打算装这些 ——
+   ├ 技能   code 包的 python-workflow、cpp-workflow
+   ├ MCP    filesystem
+   └ 依赖   numpy、matplotlib、pandoc（约 40 MB）
+   你回复「确认」我才动手。
+你：确认
+🤖 助手：装好了，自检通过。现在可用：Python 跑通闭环、
+   matplotlib 中文绘图、pandoc 文档互转。
+   要不要顺手给你的项目也生成一个 AGENTS.md？
+```
 
-- **编程**：Python、C++、MATLAB 代码的编写与运行闭环
-- **文献**：检索、PDF 精读、参考文献格式、翻译
-- **数据**：清洗、分析、画图（含中文字体配置）
-- **办公**：Word / Excel / PPT / PDF 文件级读写
-- **学习**：专业课讲解总结、习题引导
+**一句话上手**：复制上方那行仓库地址，粘进你的 AI 助手对话框，发送即可 —— 它会自己探测环境、自己装、自己验证。全程有清单确认、可 dry-run、可卸载。
 
-## 怎么用
+📖 快速开始 · 🧩 [能力清单](#八个能力包--十七个技能) · ❓ [常见问题](#常见问题-faq) · ⬆️ [更新](#更新) · 🗑️ [卸载](#卸载)
 
-1. 先确保你已经装好某个 AI 助手，并且**接入了可用的 API**
-2. 把本仓库地址**粘贴到对话框**，然后发送
-3. 你的助手会自己读、自己探测环境、自己装
-4. 中途它会给你一份「即将安装什么」的清单，**你回复确认**它才会动手
-5. 装完它会跑一遍自检，告诉你哪些能力现在可用
+## 目录
 
-> 你不需要懂命令行。它会引导你。
+- [为什么用它](#为什么用它)
+- [快速开始](#快速开始)
+- [支持哪些宿主](#支持哪些宿主)
+- [场景预设](#场景预设)
+- [八个能力包 · 十七个技能](#八个能力包--十七个技能)
+- [MCP 要克制](#mcp-要克制)
+- [社区高星技能](#社区高星技能)
+- [依赖分档](#依赖分档)
+- [国内网络](#国内网络)
+- [安全与边界](#安全与边界)
+- [常见问题 FAQ](#常见问题-faq)
+- [更新](#更新)
+- [出问题了怎么办](#出问题了怎么办)
+- [卸载](#卸载)
+- [已知做不到的事](#已知做不到的事)
+- [目录结构](#目录结构)
+- [贡献](#贡献)
+- [许可证](#许可证)
 
-最后一步它还会问你：**要不要给当前项目生成一个 `AGENTS.md`**。建议答应 —— 这是新手最该配的一项，能让 AI 记住你的项目约定，省得每次重复交代。
+## 为什么用它
+
+- **不用懂命令行** —— 你只要说「我想写毕业论文」，它自己决定该装什么、怎么装、装完怎么验。
+- **一次装全会用到的东西** —— 编程、文献、数据、办公、学习五大场景共 17 个技能一次到位，省得一个个找、一个个配。
+- **装什么完全确定** —— 技能文件逐字节一致，你机器上的结果和别人的一样；装之前先给你看清单，你确认才动手。
+- **专治「装了却用不了」** —— 自动检测不在 PATH 的工具并建转发脚本（shim），自检会真的执行一遍确认可用，不是只看文件在不在。
+- **不把 AI 变笨** —— 每个包只挂真正必要的少数 MCP（实测 3 个 MCP 就能吃掉 200k 上下文的 72%），克制优先。
+
+## 快速开始
+
+### ① 我想一句话就装（推荐）
+
+1. 先确保你**已经装好某个 AI 助手，并且接入了可用的 API**
+2. 把本仓库地址粘进对话框，再补一句用途，例如：`https://github.com/tyiiiyt01/agent-starter-kit 我要写毕业论文`
+3. 助手会自己探测环境、匹配场景、打印清单；**你回复确认**它才动手，装完再跑一遍自检，告诉你哪些能力现在可用
+
+> 你不需要懂命令行，它会引导你。最后它还会问：**要不要给当前项目生成一个 `AGENTS.md`** —— 建议答应，这是新手最该配的一项，能让 AI 记住你的项目约定，省得每次重复交代。
+
+### ② 我想自己挑
+
+直接用包名点名（包名见下节「八个能力包」），例如：`用 agent-starter-kit 帮我装 code 和 study 两个包`；想加社区技能也行：`帮我加上 anthropics-skills`。
+
+> 匹配不上用途时，默认只装 `code`（最小可用），并告诉你以后可以随时加。
 
 ## 支持哪些宿主
 
@@ -37,15 +92,17 @@
 | Cursor | `~/.cursor/skills/` | `~/.cursor/mcp.json` | ✅ 已核实 |
 | Trae（国际版） | `~/.trae/skills/` | `<配置目录>/User/mcp.json` | ✅ 已核实 |
 | Trae CN（国内版） | `~/.trae-cn/skills/` | `<配置目录>/User/mcp.json` | ⚠️ 部分核实 |
-| Reasonix | `~/.reasonix/skills/` | `~/.reasonix/config.toml` | ⚠️ 部分核实 |
+| Reasonix | 工作区内的 `.reasonix/skills/`（如 `~/.reasonix/global-workspace/.reasonix/skills/`） | `~/.reasonix/config.toml` 的 `[[plugins]]` 段 | ✅ 已核实路径（工作区制） |
 | Codex CLI | `~/.codex/skills/` | `~/.codex/config.toml` | ⚠️ 未核实 |
 | **其他** | — | — | 由 AI 现场推断 + 自检复核 |
 
-标 ⚠️ 的宿主：路径可能未完全准确。**装的时候 AI 会先让你确认一次真实路径**，装完由自检复核，猜错了会被抓出来 —— 不会静默写错。
+> **Reasonix 是工作区制**：技能装在**工作区内部**的 `.reasonix/skills/`，不同工作区各有独立目录，所以安装时会问你「当前用哪个工作区」。MCP 配置写在 `~/.reasonix/config.toml` 的 `[[plugins]]` 数组表里。
+>
+> 标 ⚠️ 的宿主：路径可能未完全准确。**装的时候 AI 会先让你确认一次真实路径**，装完由自检复核，猜错了会被抓出来 —— 不会静默写错。
 
-## 场景预设（你不用说包名）
+## 场景预设
 
-你只要说一句"我要写毕业论文"，AI 就知道该装哪些：
+你不用说包名 —— 只要说一句「我要写毕业论文」，AI 就知道该装哪些：
 
 | 你说 | 装什么 |
 |---|---|
@@ -57,8 +114,6 @@
 | 我要做科研 / 发小论文 | `research` `writing` `math-modeling` |
 | 理工科课程作业 | `code` `study` `writing` |
 | 全都要 | 八个包全装 |
-
-匹配不上时默认只装 `code`（最小可用），并告诉你以后可以随时加。
 
 ## 八个能力包 · 十七个技能
 
@@ -75,19 +130,19 @@
 
 **Office 能力全部用纯 Python 库实现**（python-docx / openpyxl / python-pptx / pypdf / docxtpl），不依赖 Office 客户端，也不装第三方 Office MCP —— 少一层运行时，少一个失败点。
 
-## MCP 要克制（这条和"装得越多越好"相反）
+## MCP 要克制
 
-实测数据：**3 个 MCP 就能吃掉 200k 上下文里的 143k tokens（72%）**，7 个 MCP 首轮烧 67,300 tokens。**MCP 装多了，agent 会明显变笨。**
+这条和「装得越多越好」相反。实测数据：**3 个 MCP 就能吃掉 200k 上下文里的 143k tokens（72%）**，7 个 MCP 首轮烧 67,300 tokens。**MCP 装多了，agent 会明显变笨。**
 
 所以本套件的设计是：
 
-- 每个包**只挂它真正需要的少数几个** MCP，不搞"必装十大 MCP"
+- 每个包**只挂它真正需要的少数几个** MCP，不搞「必装十大 MCP」
 - 每个包标记一个 `essential`，用 `--minimal-mcp` 可以只留这一个
 - 如果你觉得 AI 反应变慢、记不住前面说的话 —— 大概率是 MCP 吃掉了上下文，试试 `--minimal-mcp`
 
-## 社区高星技能（可选）
+## 社区高星技能
 
-除了自带的 17 个技能，`community-skills.json` 还收录了一份社区高星技能清单，你可以按需加装：
+以下为可选加装。除了自带的 17 个技能，`community-skills.json` 还收录了一份社区高星技能清单，你可以按需加装：
 
 | 技能 | Star | 说明 |
 |---|---|---|
@@ -98,13 +153,7 @@
 | `cloudflare/security-audit-skill` | ~28k | 安全审查 |
 | `MathModeling-skills` | ~1.06k | 数模分阶段流程 |
 
-**默认不装** —— 技能和 MCP 一样，不是越多越好。想要更强的能力时，让 AI 帮你装（它会先告诉你许可证风险）：
-
-```
-帮我加上 anthropics-skills
-```
-
-如果你想自己动手：
+**默认不装** —— 技能和 MCP 一样，不是越多越好。想要更强的能力时，直接对助手说 `帮我加上 anthropics-skills`（它会先告诉你许可证风险）；想自己动手则运行：
 
 ```bash
 python3 scripts/apply.py --packs research --with-community anthropics-skills
@@ -113,9 +162,9 @@ python3 scripts/apply.py --packs code --with-community all
 
 > ⚠️ 这些都是第三方仓库，**许可证各不相同**（有 MIT，也有再分发受限的）。清单里的 `license_risk` 字段标了风险，安装时会提示。
 
-## 依赖分档（重要）
+## 依赖分档
 
-技能要跑得动，得有关键工具。这套东西按体积分了三档，**默认只装轻量的**：
+这一节重要，别跳过。技能要跑得动，得有关键工具。这套东西按体积分了三档，**默认只装轻量的**：
 
 | 档 | 例子 | 体积 | 策略 |
 |---|---|---|---|
@@ -125,11 +174,7 @@ python3 scripts/apply.py --packs code --with-community all
 
 ### 「装了却用不了」的解药
 
-很多东西**装上了但不在 PATH**，命令调不到 —— 这是这套配置最常见的失败模式。例如：
-
-- LibreOffice 在 macOS 上位于 `/Applications/LibreOffice.app/Contents/MacOS/soffice`，根本不在 PATH
-- pandoc 官方单文件安装器不写 PATH
-- TinyTeX 装完把链接丢到 `/usr/local/bin`，那个目录常常不在 PATH
+很多东西**装上了但不在 PATH**，命令调不到 —— 这是这套配置最常见的失败模式。例如 macOS 上的 LibreOffice 位于 `/Applications/LibreOffice.app/Contents/MacOS/soffice`、pandoc 官方单文件安装器不写 PATH、TinyTeX 的链接丢在 `/usr/local/bin` —— 这些目录常常不在 PATH。
 
 所以本套件会自动检测这些**已知位置**，命中就建一个转发脚本（shim）修好，并且自检会**真的执行一遍**来确认可用 —— 不是只看文件在不在。
 
@@ -138,9 +183,9 @@ python3 scripts/apply.py --packs code --with-community all
 1. **PDF 处理优先用 `PyMuPDF`**（纯 pip，免 sudo，无需装 poppler 二进制），只有真需要 poppler 命令行时才装它
 2. **LaTeX 编译优先用 `tectonic`**（单个二进制约 50MB，按需下载宏包），而不是 TinyTeX / MacTeX（超过 1GB）
 
-## 国内网络（这块决定安装成败）
+## 国内网络
 
-直连 GitHub Releases 经常掉到 **30 KB/s**，几百 MB 的东西直接卡死。本套件内置了多路加速：
+这块决定安装成败。直连 GitHub Releases 经常掉到 **30 KB/s**，几百 MB 的东西直接卡死。本套件内置了多路加速：
 
 - **GitHub**：自动回退 `直连 → gh-proxy.com → ghfast.top → ghproxy.net → hub.gitmirror.com`
 - **生成镜像配置文件** `~/.agent-starter-kit/mirrors.env`，`source` 一下就生效：
@@ -156,13 +201,72 @@ python3 scripts/apply.py --packs code --with-community all
 
 ## 安全与边界
 
-- **装什么、装成什么样，是完全确定的** —— 技能文件逐字节一致，你机器上的结果和别人的一样
-- **装之前会先给你看清单**，你确认才动手
-- **可查看、可卸载**：`scripts/apply.py --dry-run` 预演，`uninstall.md` 给卸载指引
-- 全程**不碰系统级配置**，不写入需要管理员权限的目录
-- ⚠️ **不绕付费墙**：不提供 CNKI 等收费库的绕过访问，只做合规检索
+> ⚠️ **动手前请先读这一段。** 本套件的核心承诺是「**看得见、由你拍板、可撤回**」。
 
-## 已知边界（做不到的事）
+- **装什么、装成什么样，是完全确定的** —— 技能文件逐字节一致，你机器上的结果和别人的一样
+- **装之前会先给你看清单**，你确认才动手；`scripts/apply.py --dry-run` 可以先预演一遍什么都不写
+- **可查看、可卸载**：`uninstall.md` 给卸载指引，只删本套件装过的条目
+- 全程**不碰系统级配置**，不写入需要管理员 / root 权限的目录（一律装到用户目录）
+- **不碰你的 API Key、账号与登录信息**
+- ⚠️ **不绕付费墙**：不提供 CNKI 等收费库的绕过访问，只做合规检索
+- ⚠️ **不代写作业**：学术诚信优先，「做题能力」= 讲解 + 步骤引导 + 校验，不给答案
+
+## 常见问题 FAQ
+
+**Q：我需要懂命令行吗？**
+不需要。你只负责把仓库地址粘进对话框、回一句用途、确认清单；探测、安装、验证都由助手完成，它会一步步引导你。
+
+**Q：它会装什么东西到我机器上？**
+三类，都会在动手前列成清单让你确认：① 技能文件（就是一批 Markdown，放进你助手的技能目录）；② MCP 配置（合并写进你助手的配置文件，或走宿主自带命令注册）；③ 依赖（Python 包 + 命令行工具，默认只装几十 MB 的轻量档）。本套件会记一份账本 `~/.agent-starter-kit/state.json`，装过什么一目了然。
+
+**Q：装坏了怎么办？**
+按 [`uninstall.md`](uninstall.md) 卸载。它只删账本里记录过的条目，绝不碰你自己配的 MCP、技能和文件。注意：Python 包和命令行工具**默认不自动卸**（因为可能被你的其它项目用着），会列出来交给你自己决定。
+
+**Q：会不会很慢 / 我要下多少东西？**
+默认只装 `light` 档，通常几十 MB。`medium` 档（100MB–1GB）需要显式加 `--tier medium`；`heavy` 档（如 LibreOffice，约 700MB）**永不自动装**，只做检测并给你安装引导。
+
+**Q：我没有 API Key、还没接入 API，能用吗？**
+不能。**已装好某个 AI 助手并接入可用 API 是硬前置** —— 整套流程都是由你的助手来执行的。另外 Python 3.8+ 是唯一的硬性环境要求（Windows 上还会避开「微软商店 stub」陷阱）。
+
+**Q：能只装一部分吗？**
+能。要么直接点名包（「帮我装 code 和 study」），要么说一句用途让它按场景预设匹配，要么只说「就装代码相关的」。匹配不上时它默认只装 `code`，并告诉你以后随时能加。
+
+**Q：为什么有些东西明明装了却用不了？**
+大多数是 **PATH 问题** —— 程序装在磁盘上，但那个目录不在 PATH，命令调不到（如 macOS 的 LibreOffice、pandoc 单文件安装器）。本套件会自动检测已知位置并建转发脚本（shim）修好，自检也会真的执行一遍确认。如果仍调不到，跑一次 `apply.py`（幂等，不会重复装）重建 shim 即可。
+
+## 更新
+
+本套件的安装是**幂等**的：重复跑不会重复装，只会补齐缺的、更新旧的。
+
+- **更新到最新版**：把仓库地址**再粘一次**给助手，让它重跑一遍即可。它会重新拉取最新代码，再对当前环境做一次「差量安装」。
+- **锁定版本**：目前仓库未发布正式 tag / release。需要固定版本时，可以让助手指定具体 commit 克隆后再安装，例如 `git clone` 后 `git checkout <commit>`，再执行 `INSTALL.md` 的步骤 —— 这样装的技能与那次快照逐字节一致。
+- **只是想补装某个包 / 技能**：直接说「再帮我装 `design` 包」或「加上 `anthropics-skills`」，不用整套重来。
+
+## 出问题了怎么办
+
+| 症状 | 先试这个 |
+|---|---|
+| 命令「装了却调不到」 | 让助手跑一次 `apply.py`（幂等）重建 shim；或检查该工具的目录是否在 PATH |
+| AI 变慢、记不住前文 | 大概率是 MCP 吃上下文，让助手用 `--minimal-mcp` 只保留 `essential` |
+| 国内下载卡在几 KB/s | 用 `~/.agent-starter-kit/mirrors.env` 里的镜像，或让助手加 GitHub 加速前缀重试 |
+| 大件依赖下载超时 | 不要死等 —— 让助手直接跳过该项，改用替代方案（如 poppler → PyMuPDF） |
+| 技能没生效 | 让助手跑 `scripts/doctor.py` 逐项自检，它会真的执行一遍来验证 |
+| 想彻底回退 | 见下方「卸载」，按账本逐条移除 |
+
+> 实在卡住时，把**原始报错原文**发给助手，比描述「它不工作」有用得多。
+
+## 卸载
+
+一句话：**让助手读 [`uninstall.md`](uninstall.md) 执行卸载**（例如「按 uninstall.md 把 agent-starter-kit 卸掉」）。
+
+要点：
+
+- **以账本为准**：只删 `~/.agent-starter-kit/state.json` 里记录过的技能、MCP 条目与 shim
+- **只删自己装过的**：你在别处配的 MCP、技能和文件，一个都不动
+- **依赖默认不卸**：Python 包与命令行工具会列出来，由你自己决定（避免弄坏无关项目）
+- 卸载前它会先打印一份清单，**等你确认**才动手
+
+## 已知做不到的事
 
 | 做不到 | 原因 | 替代方案 |
 |---|---|---|
@@ -177,8 +281,13 @@ python3 scripts/apply.py --packs code --with-community all
 agent-starter-kit/
 ├── README.md             ← 你正在看的（给人看）
 ├── AGENTS.md             ← 给 AI 看：行为约束与入口（agent 会自动读这个文件）
-├── INSTALL.md            ← 给 AI 看：执行手册（六个 Step）
+├── INSTALL.md            ← 给 AI 看：执行手册（Step 0–6）
+├── llms.txt              ← 给 AI 看：文件索引（llms.txt 约定，只读地图）
 ├── uninstall.md          ← 给 AI 看：卸载指引
+├── SECURITY.md           ← 安全披露政策与本项目的风险边界
+├── CHANGELOG.md          ← 版本变更记录
+├── LICENSE               ← Apache-2.0
+├── requirements.txt      ← 安装引擎自身的依赖（tomli-w）
 ├── hosts.json            ← 宿主适配表，加新宿主只改这里
 ├── presets.json          ← 场景预设（"我要写论文" → 装哪些包）
 ├── community-skills.json ← 社区高星技能清单（可选安装，带 star 与许可证）
@@ -194,15 +303,33 @@ agent-starter-kit/
 └── skills/               ← 十七个技能文件（逐字节一致，不可改）
 ```
 
-## 给想改代码的人
+> 为什么同时有 `AGENTS.md` 和 `llms.txt`？两者不冲突、分工不同：
+> **`AGENTS.md`** 是给"要在你机器上干活的 agent"的**操作说明**（能做什么、禁止做什么），
+> **`llms.txt`** 是给"要读懂这个仓库的 agent"的**只读地图**（该去读哪些文件）。这是当前社区通行做法。
 
-- 改 `packs/*.json` 前先读 [packs/SCHEMA.md](packs/SCHEMA.md) —— 字段名写错会被**静默忽略**
-- 新增技能：目录名必须与 `SKILL.md` 里 frontmatter 的 `name` 完全一致
+## 贡献
+
+欢迎改进，几条硬约定：
+
+- 改 `packs/*.json` 前先读 [`packs/SCHEMA.md`](packs/SCHEMA.md) —— 字段名写错会被**静默忽略**
+- 新增技能：目录名必须与 `SKILL.md` 里 frontmatter 的 `name` **完全一致**（`doctor.py` 会校验）
 - 新增宿主：只改 `hosts.json`，不用动脚本
+- 所有脚本只用 Python，**不提供 `.sh`**（跨平台第一原则：Windows 上 `.sh` 跑不了）；所有写入一律显式 UTF-8 无 BOM
 - 自测务必**用假 HOME**，不要拿真实配置试：
+
   ```bash
   HOME=/tmp/test-home python3 scripts/apply.py --packs code --dry-run
   HOME=/tmp/test-home python3 scripts/doctor.py
   ```
 
-更多约定见 [AGENTS.md](AGENTS.md) 第五节。
+更多约定见 [`AGENTS.md`](AGENTS.md) 第五节。
+
+## 许可证
+
+本项目以 **Apache-2.0** 许可证发布，详见 `LICENSE`。
+
+**第三方内容声明**：
+
+- 本仓库 `skills/` 下的技能文件为本项目自带内容，随本项目一同按 Apache-2.0 发布
+- `community-skills.json` 收录的是**第三方开源仓库**，各自适用其原始许可证（含 MIT、CC-BY-4.0 以及「未核实」等），清单里以 `license` / `license_risk` 字段标注；**下载与使用前请自行确认对方许可证**
+- 社区技能**默认不安装**，需要时由你显式指定
