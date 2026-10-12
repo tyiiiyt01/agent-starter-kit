@@ -92,6 +92,11 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 - `--branch v0.1.0`：锁定到具体版本，行为不再随 `main` 漂移
 - `--depth 1`：只取这一版，下载更小更快
 
+> ℹ️ 用标签克隆时 git 可能打印一行 `warning: refs/tags/v0.1.0 ... is not a commit!`，
+> 紧跟着 `Note: switching to '<commit>'`。**这是正常的，不是错误** ——
+> 注解标签（annotated tag）本身是一个独立对象，git 解析后已正确切到对应提交。
+> 你会处于 detached HEAD 状态，对只读使用没有影响。
+
 > 注意：锁旧版本 = 放弃该版本之后的安全修复（见第一节）。请在「可复现」与「拿到修复」之间自行权衡。
 
 ---

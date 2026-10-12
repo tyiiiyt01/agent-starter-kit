@@ -239,7 +239,14 @@ python3 scripts/apply.py --packs code --with-community all
 本套件的安装是**幂等**的：重复跑不会重复装，只会补齐缺的、更新旧的。
 
 - **更新到最新版**：把仓库地址**再粘一次**给助手，让它重跑一遍即可。它会重新拉取最新代码，再对当前环境做一次「差量安装」。
-- **锁定版本**：目前仓库未发布正式 tag / release。需要固定版本时，可以让助手指定具体 commit 克隆后再安装，例如 `git clone` 后 `git checkout <commit>`，再执行 `INSTALL.md` 的步骤 —— 这样装的技能与那次快照逐字节一致。
+- **锁定版本**（想要可复现的行为时推荐）：
+
+  ```bash
+  git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-kit
+  ```
+
+  当前已发布 `v0.1.0`。`--branch v0.1.0` 把行为固定在那一版，不再随 `main` 漂移；`--depth 1` 只取这一版。
+  变更记录见 [CHANGELOG.md](CHANGELOG.md)，为什么建议锁版本见 [SECURITY.md](SECURITY.md) 第 3.4 节。
 - **只是想补装某个包 / 技能**：直接说「再帮我装 `design` 包」或「加上 `anthropics-skills`」，不用整套重来。
 
 ## 出问题了怎么办
