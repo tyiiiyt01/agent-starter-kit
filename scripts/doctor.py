@@ -284,16 +284,32 @@ def check_skills(hosts: dict, expected_packs: list[str]) -> tuple[bool, list[tup
     for host_name, spec in hosts.items():
         if not any(expand(p).exists() for p in spec["detect"]):
             continue
+
+        # 不支持技能的宿主（如 Kiro / Amp）：只注册 MCP，不校验技能。
+        # 这不是失败，要如实说明，别让用户以为技能装丢了。
+        if not spec.get("skills") and not spec.get("skills_discovery"):
+            note = spec.get("_skills_note") or "该宿主不支持 SKILL.md 技能约定"
+            rows.append((f"{host_name}（不适用）", True, f"只注册 MCP，不投技能 —— {note}"))
+            any_ok = True
+            continue
+
         # 复用 apply.py 的解析逻辑（含 skills_discovery 与工作区制候选）。
         # 找到多个候选时逐个校验，任一命中即算成功 —— 因为 apply 装之前会
         # 先中止并要求用户用 --skill-dir 指定，用户选的那个就在候选里。
         try:
             found = _apply.discover_skill_dirs(spec)
             dest_root = found[0] if found else _apply.resolve_skills_root(spec)
+            if dest_root is None:
+                rows.append((f"{host_name}（不适用）", True, "只注册 MCP，不投技能"))
+                any_ok = True
+                continue
             candidates = found or [dest_root]
             ambiguous = len(found) > 1
         except Exception:  # noqa: BLE001
-            dest_root, candidates, ambiguous = expand(spec["skills"][0]), [expand(spec["skills"][0])], False
+            fallback = expand(spec["skills"][0]) if spec.get("skills") else None
+            if fallback is None:
+                continue
+            dest_root, candidates, ambiguous = fallback, [fallback], False
 
         if not any(c.exists() for c in candidates):
             rows.append((f"{host_name} @ {dest_root}", False, "技能目录不存在，未投放"))

@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](#支持哪些宿主)
-[![Hosts](https://img.shields.io/badge/%E5%AE%BF%E4%B8%BB-6%20%E7%A7%8D-brightgreen.svg)](#支持哪些宿主)
+[![Hosts](https://img.shields.io/badge/%E5%AE%BF%E4%B8%BB-16%20%E7%A7%8D-brightgreen.svg)](#支持哪些宿主)
 [![Stars](https://img.shields.io/github/stars/tyiiiyt01/agent-starter-kit)](https://github.com/tyiiiyt01/agent-starter-kit)
 
 <!--
@@ -154,19 +154,49 @@ $ https://github.com/tyiiiyt01/agent-starter-kit
 
 ## 支持哪些宿主
 
-| 宿主 | 技能目录 | MCP 配置 | 核实状态 |
-|---|---|---|---|
-| Claude Code | `~/.claude/skills/` | `claude mcp add --scope user` | ✅ 已核实 |
-| Cursor | `~/.cursor/skills/` | `~/.cursor/mcp.json` | ✅ 已核实 |
-| Trae（国际版） | `~/.trae/skills/` | `<配置目录>/User/mcp.json` | ✅ 已核实 |
-| Trae CN（国内版） | `~/.trae-cn/skills/` | `<配置目录>/User/mcp.json` | ⚠️ 部分核实 |
-| Reasonix | 工作区内的 `.reasonix/skills/`（如 `~/.reasonix/global-workspace/.reasonix/skills/`） | `~/.reasonix/config.toml` 的 `[[plugins]]` 段 | ✅ 已核实路径（工作区制） |
-| Codex CLI | `~/.codex/skills/` | `~/.codex/config.toml` | ⚠️ 未核实 |
-| **其他** | — | — | 由 AI 现场推断 + 自检复核 |
+**16 个**（11 个路径已由官方文档核实 / 5 个部分核实 / 0 个未核实）：
 
-> **Reasonix 是工作区制**：技能装在**工作区内部**的 `.reasonix/skills/`，不同工作区各有独立目录，所以安装时会问你「当前用哪个工作区」。MCP 配置写在 `~/.reasonix/config.toml` 的 `[[plugins]]` 数组表里。
->
-> 标 ⚠️ 的宿主：路径可能未完全准确。**装的时候 AI 会先让你确认一次真实路径**，装完由自检复核，猜错了会被抓出来 —— 不会静默写错。
+| 宿主 | 技能目录 | MCP 配置 | 核实 |
+|---|---|---|---|
+| Claude Code | `~/.claude/skills/` | `claude mcp add --scope user` | ✅ |
+| Cursor | `~/.cursor/skills/` · `~/.agents/skills/` | `~/.cursor/mcp.json` | ✅ |
+| Trae（国际版） | `~/.trae/skills/` · `~/.agents/skills/` | `<配置目录>/User/mcp.json` | ✅ |
+| Trae CN（国内版） | `~/.trae-cn/skills/` · `~/.agents/skills/` | `<配置目录>/User/mcp.json` | ⚠️ |
+| Codex CLI | **`~/.agents/skills/`** | `~/.codex/config.toml` | ✅ |
+| Gemini CLI | `~/.gemini/skills/` · `~/.agents/skills/` | `~/.gemini/settings.json` | ✅ |
+| Qwen Code（通义） | `~/.qwen/skills/` · `~/.agents/skills/` | `~/.qwen/settings.json` | ⚠️ |
+| Windsurf | `~/.codeium/windsurf/skills/` | `~/.codeium/windsurf/mcp_config.json` | ✅ |
+| Cline（VS Code 扩展） | `~/.cline/skills/` · `~/.agents/skills/` | `~/.cline/data/settings/cline_mcp_settings.json` | ✅ |
+| Roo Code（VS Code 扩展） | `~/.roo/skills/` · `~/.agents/skills/` | VS Code globalStorage 内 | ⚠️ |
+| Zed | `~/.agents/skills/` | `~/.config/zed/settings.json`（段名 `context_servers`） | ✅ |
+| OpenCode | `~/.config/opencode/skills/` | `~/.config/opencode/opencode.json`（段名 `mcp`） | ✅ |
+| GitHub Copilot CLI | `~/.copilot/skills/` · `~/.agents/skills/` | `~/.copilot/mcp-config.json` | ✅ |
+| Kiro（AWS） | **不支持技能** | `~/.kiro/settings/mcp.json` | ✅ |
+| Amp（Sourcegraph） | **不支持技能** | `~/.config/amp/settings.json` | ⚠️ |
+| Reasonix | 工作区内 `.reasonix/skills/`（工作区制） | `~/.reasonix/config.toml` 的 `[[plugins]]` | ⚠️ |
+
+### 关于 `.agents/skills/` 这个通用目录
+
+多个宿主**同时认** `.agents/skills/` 这个约定：Cursor、Trae、Codex、Gemini CLI、Cline、Roo Code、Zed、GitHub Copilot。
+
+所以如果你装了多个这类工具，**只往它写一份技能就能被它们共同读到** —— 不用逐个投放。
+
+### 三个需要特殊处理的情况
+
+- **Reasonix 是工作区制** —— 技能装在工作区**内部**的 `.reasonix/skills/`，不同工作区各有独立目录。安装时会问你「当前用哪个工作区」，不会瞎猜
+- **Kiro / Amp 不支持技能** —— 它们只用 steering / AGENT.md 机制，本套件只给它们注册 MCP，**不投技能**。这不是装失败，是工具本身的限制
+- **Codex 改完配置要重启** —— 装完得重启 Codex 才生效
+
+### 这几个工具当前无法适配
+
+| 工具 | 原因 |
+|---|---|
+| Aider | 既无原生 MCP，也不支持 SKILL.md |
+| Continue.dev | MCP 配置是 YAML 格式，脚本只处理 JSON/TOML |
+| VS Code 内 Copilot | 配置是**项目级** `.vscode/mcp.json`，不是用户级 |
+| Kilo Code / Warp | 路径随形态差异过大、或属终端工具，暂不收录以免写错位置 |
+
+> 标 ⚠️ 的宿主：路径来自同构推断或社区资料，官方未明确。**装的时候 AI 会先让你确认一次真实路径**，装完由自检复核 —— 不会静默写错。表里的路径依据见 [`hosts.json`](hosts.json) 的 `_source` 字段（每条都附官方文档链接）。
 
 ## 场景预设
 

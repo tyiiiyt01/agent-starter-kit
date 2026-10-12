@@ -119,19 +119,27 @@ def probe_hosts(hosts: dict) -> dict:
     found, missing = {}, {}
     for name, spec in hosts.items():
         hits = [str(expand(p)) for p in spec["detect"] if expand(p).exists()]
+        skill_paths = [str(expand(p)) for p in spec.get("skills", [])]
         entry = {
             "display": spec["display"],
             "verified": spec.get("verified", False),
             "verify_detail": spec.get("_verified_detail") or spec.get("_unverified"),
             "confirm_hint": spec.get("confirm_hint"),
+            "doc_source": spec.get("_source"),
             "detect_hits": hits,
-            "skills_dir": [str(expand(p)) for p in spec["skills"]],
-            "skills_dir_exists": any(expand(p).exists() for p in spec["skills"]),
+            "supports_skills": bool(spec.get("skills") or spec.get("skills_discovery")),
+            "skills_dir": skill_paths,
+            "skills_dir_exists": any(expand(p).exists() for p in spec.get("skills", [])),
             "mcp_file": "",
             "mcp_file_exists": False,
             "mcp_strategy": spec["mcp"]["strategy"],
             "mcp_shape": spec["mcp"].get("shape", "table"),
+            "mcp_key": spec["mcp"].get("key"),
         }
+        if not entry["supports_skills"]:
+            entry["skills_note"] = spec.get("_skills_note") or "该宿主不支持 SKILL.md 技能约定"
+        if spec.get("needs_restart"):
+            entry["needs_restart"] = True
         mf = resolve_mcp_file(spec["mcp"])
         if mf:
             entry["mcp_file"] = str(mf)

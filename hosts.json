@@ -1,11 +1,13 @@
 {
-  "_note": "宿主适配表。新增宿主只改这一个文件。路径支持 ~ / %APPDATA% / %USERPROFILE%，由 scripts/detect.py 展开。",
+  "_note": "宿主适配表。新增宿主只改这一个文件。路径支持 ~ / %APPDATA% / %USERPROFILE% / %LOCALAPPDATA%，由 scripts/detect.py 展开。",
   "_schema": {
     "detect": "判断宿主是否存在的路径，命中任意一个即视为已安装",
-    "skills": "技能投放目录，按顺序尝试，第一个可写的生效",
-    "mcp.strategy": "cli = 走宿主自带命令行写入（安全）；json/toml = 直接合并配置文件",
-    "verified": "true 表示已在真机核对过路径；false 表示未核实，必须由 agent 现场确认后写入",
-    "confirm_hint": "让用户在该宿主里操作哪一步可以读到真实路径"
+    "skills": "技能投放目录，按顺序尝试第一个可写的。**空数组表示该宿主不支持技能，只能注册 MCP**",
+    "skills_discovery": "工作区制宿主用：通配符搜索候选技能目录（工作区名不固定）",
+    "mcp.strategy": "cli = 走宿主自带命令行写入；json = 合并 JSON；toml = 合并 TOML",
+    "mcp.shape": "table = name→{...} 字典；array = [[section]] 数组表（每个条目一个块）",
+    "verified": "true = 有官方文档确认；\"partial\" = 有实测或同构推断但官方未明确；false = 未核实，装前必须让用户确认",
+    "_source": "路径依据的官方文档地址"
   },
 
   "_conventions": {
@@ -18,10 +20,16 @@
     "_why_cli": "strategy=cli 的宿主（Claude Code）其配置文件是混合大文件，必须走它自己的命令行写入"
   },
 
+  "_agents_skills_convention": {
+    "_note": "重要：`.agents/skills/` 是一个【跨工具通用技能目录】约定。多个宿主同时认它（Cursor / Trae / Codex / Gemini CLI / Cline / Roo Code / Zed / GitHub Copilot）。",
+    "implication_for_agent": "如果用户装了多个认这个目录的宿主，只往 `<项目>/.agents/skills/` 或 `~/.agents/skills/` 写一份，就能被它们共同读到 —— 比逐个宿主投放更省事。但**只在用户确实要用多个宿主时才这么做**，否则反而绕开了各宿主的独立目录。"
+  },
+
   "hosts": {
     "claude-code": {
       "display": "Claude Code",
       "verified": true,
+      "_source": "https://code.claude.com/docs/en/skills/",
       "detect": ["~/.claude", "~/.claude.json"],
       "skills": ["~/.claude/skills"],
       "mcp": {
@@ -36,8 +44,9 @@
     "cursor": {
       "display": "Cursor",
       "verified": true,
+      "_source": "https://cursor.com/help/customization/skills",
       "detect": ["~/.cursor"],
-      "skills": ["~/.cursor/skills"],
+      "skills": ["~/.cursor/skills", "~/.agents/skills"],
       "mcp": {
         "strategy": "json",
         "file": "~/.cursor/mcp.json",
@@ -48,8 +57,9 @@
     "trae": {
       "display": "Trae（国际版）",
       "verified": true,
+      "_source": "https://docs.trae.ai/ide/skills",
       "detect": ["~/.trae", "~/Library/Application Support/Trae", "%APPDATA%/Trae"],
-      "skills": ["~/.trae/skills"],
+      "skills": ["~/.trae/skills", "~/.agents/skills"],
       "mcp": {
         "strategy": "json",
         "file": {
@@ -65,9 +75,10 @@
     "trae-cn": {
       "display": "Trae CN（国内版）",
       "verified": "partial",
-      "_verified_detail": "真机已确认主目录 ~/.trae-cn 与配置目录 '~/Library/Application Support/Trae CN'；skills 与 mcp.json 的确切文件名未经官方文档核实，装前必须用 confirm_hint 让用户确认。",
+      "_verified_detail": "技能目录已由官方文档确认（docs.trae.cn/ide/skills）。MCP 官方只写「mcp.json」未给绝对路径，此处按国际版同构推断 —— 真机已确认配置目录是 '~/Library/Application Support/Trae CN'。装前用 confirm_hint 让用户读一次真实路径。",
+      "_source": "https://docs.trae.cn/ide/skills  ·  https://docs.trae.cn/ide/add-mcp-servers",
       "detect": ["~/.trae-cn", "~/Library/Application Support/Trae CN", "%APPDATA%/Trae CN"],
-      "skills": ["~/.trae-cn/skills"],
+      "skills": ["~/.trae-cn/skills", "~/.agents/skills"],
       "mcp": {
         "strategy": "json",
         "file": {
@@ -80,38 +91,203 @@
       "confirm_hint": "Trae CN 设置 → MCP → 打开配置文件，读它显示的真实路径再写入"
     },
 
+    "codex": {
+      "display": "Codex CLI",
+      "verified": true,
+      "_source": "https://developers.openai.com/codex/skills  ·  https://developers.openai.com/codex/mcp",
+      "_correction": "⚠️ 早期版本本文件把技能目录写成 ~/.codex/skills，这是错的。Codex 官方技能目录是 `.agents/skills`（项目级、仓库根）与 `~/.agents/skills`（用户级），不是 ~/.codex/skills。",
+      "detect": ["~/.codex", "~/.agents"],
+      "skills": ["~/.agents/skills"],
+      "mcp": {
+        "strategy": "toml",
+        "file": "~/.codex/config.toml",
+        "key": "mcp_servers",
+        "format": "toml",
+        "shape": "table"
+      },
+      "needs_restart": true,
+      "_restart_note": "Codex 改 config.toml 后需要重启才生效，装完要提醒用户",
+      "confirm_hint": "让用户确认 ~/.codex/config.toml 是否存在；不存在就先跑一次 codex 让它生成"
+    },
+
+    "gemini-cli": {
+      "display": "Gemini CLI",
+      "verified": true,
+      "_source": "https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/skills.md",
+      "detect": ["~/.gemini"],
+      "skills": ["~/.gemini/skills", "~/.agents/skills"],
+      "mcp": {
+        "strategy": "json",
+        "file": "~/.gemini/settings.json",
+        "key": "mcpServers"
+      }
+    },
+
+    "qwen-code": {
+      "display": "Qwen Code（通义）",
+      "verified": "partial",
+      "_verified_detail": "MCP 路径有官方文档确认。技能目录官方确认支持 SKILL.md，但检索未见明确目录路径，此处按 Gemini CLI 系（Qwen Code 是它的分支）推断，装前必须让用户确认。",
+      "_source": "https://qwenlm.github.io/qwen-code-docs/en/users/features/mcp/",
+      "detect": ["~/.qwen"],
+      "skills": ["~/.qwen/skills", "~/.agents/skills"],
+      "mcp": {
+        "strategy": "json",
+        "file": "~/.qwen/settings.json",
+        "key": "mcpServers"
+      },
+      "confirm_hint": "让用户确认 Qwen Code 的技能目录 —— 官方支持 SKILL.md 但未公开目录路径"
+    },
+
+    "windsurf": {
+      "display": "Windsurf",
+      "verified": true,
+      "_source": "https://docs.windsurf.com/windsurf/cascade/skills  ·  https://docs.windsurf.com/windsurf/cascade/mcp",
+      "detect": ["~/.codeium/windsurf", "~/.windsurf"],
+      "skills": ["~/.codeium/windsurf/skills"],
+      "mcp": {
+        "strategy": "json",
+        "file": "~/.codeium/windsurf/mcp_config.json",
+        "key": "mcpServers"
+      }
+    },
+
+    "cline": {
+      "display": "Cline（VS Code 扩展）",
+      "verified": true,
+      "_source": "https://docs.cline.bot/features/skills  ·  https://docs.cline.bot/mcp/mcp-overview",
+      "detect": ["~/.cline"],
+      "skills": ["~/.cline/skills", "~/.agents/skills"],
+      "mcp": {
+        "strategy": "json",
+        "file": {
+          "darwin": "~/.cline/data/settings/cline_mcp_settings.json",
+          "win32": "%USERPROFILE%/.cline/data/settings/cline_mcp_settings.json",
+          "linux": "~/.cline/data/settings/cline_mcp_settings.json"
+        },
+        "key": "mcpServers"
+      }
+    },
+
+    "roo-code": {
+      "display": "Roo Code（VS Code 扩展）",
+      "verified": "partial",
+      "_verified_detail": "技能目录有官方文档确认。MCP 配置在 VS Code 的 globalStorage 内，路径随 VS Code 变体（Code / Insiders / VSCodium）与平台不同，无法写死 —— 必须让用户确认。",
+      "_source": "https://roocodeinc.github.io/Roo-Code/features/skills/",
+      "detect": ["~/.roo"],
+      "skills": ["~/.roo/skills", "~/.agents/skills"],
+      "mcp": {
+        "strategy": "json",
+        "file": "~/.roo/mcp.json",
+        "key": "mcpServers"
+      },
+      "confirm_hint": "Roo Code 的 MCP 配置在 VS Code globalStorage 里（随 Code/Insiders/VSCodium 变体不同）。让用户在 Roo Code 设置里点「打开 MCP 配置」读真实路径"
+    },
+
+    "zed": {
+      "display": "Zed",
+      "verified": true,
+      "_source": "https://zed.dev/docs/ai/skills  ·  https://zed.dev/docs/ai/mcp",
+      "detect": ["~/.config/zed", "%APPDATA%/Zed"],
+      "skills": ["~/.agents/skills"],
+      "_skills_note": "Zed 只认通用目录 .agents/skills，没有自己的技能目录",
+      "mcp": {
+        "strategy": "json",
+        "file": {
+          "darwin": "~/.config/zed/settings.json",
+          "win32": "%APPDATA%/Zed/settings.json",
+          "linux": "~/.config/zed/settings.json"
+        },
+        "key": "context_servers",
+        "_shape_note": "Zed 用的段名是 context_servers，不是 mcpServers"
+      },
+      "confirm_hint": "Zed 的 Windows 路径来自社区资料，官方只写了 ~/.config/zed/settings.json"
+    },
+
+    "opencode": {
+      "display": "OpenCode",
+      "verified": true,
+      "_source": "https://opencode.ai/docs/skills  ·  https://opencode.ai/docs/mcp-servers",
+      "detect": ["~/.config/opencode", "~/.opencode"],
+      "skills": ["~/.config/opencode/skills"],
+      "mcp": {
+        "strategy": "json",
+        "file": "~/.config/opencode/opencode.json",
+        "key": "mcp",
+        "_shape_note": "OpenCode 用的段名是 mcp，不是 mcpServers"
+      }
+    },
+
+    "copilot-cli": {
+      "display": "GitHub Copilot CLI",
+      "verified": true,
+      "_source": "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers",
+      "detect": ["~/.copilot"],
+      "skills": ["~/.copilot/skills", "~/.agents/skills", "~/.claude/skills"],
+      "mcp": {
+        "strategy": "json",
+        "file": "~/.copilot/mcp-config.json",
+        "key": "mcpServers"
+      }
+    },
+
+    "kiro": {
+      "display": "Kiro（AWS）",
+      "verified": true,
+      "_source": "https://docs.aws.amazon.com/opensearch-service/latest/developerguide/mcp-server-configure-ide.html",
+      "detect": ["~/.kiro"],
+      "skills": [],
+      "_skills_note": "Kiro 不支持 SKILL.md 技能约定（它用 steering 机制），只能注册 MCP",
+      "mcp": {
+        "strategy": "json",
+        "file": "~/.kiro/settings/mcp.json",
+        "key": "mcpServers"
+      }
+    },
+
+    "amp": {
+      "display": "Amp（Sourcegraph）",
+      "verified": "partial",
+      "_verified_detail": "MCP 配置文件位置有官方文档，但段名 amp.mcpServers 是嵌套键，本脚本按单层键写入会写错结构 —— 装前必须让用户确认实际结构。",
+      "_source": "https://ampcode.com/manual",
+      "detect": ["~/.config/amp", "%APPDATA%/amp"],
+      "skills": [],
+      "_skills_note": "Amp 用 AGENT.md 而不是 SKILL.md，不支持技能投放",
+      "mcp": {
+        "strategy": "json",
+        "file": {
+          "darwin": "~/.config/amp/settings.json",
+          "win32": "%APPDATA%/amp/settings.json",
+          "linux": "~/.config/amp/settings.json"
+        },
+        "key": "amp.mcpServers"
+      },
+      "confirm_hint": "Amp 的段名是嵌套的 amp.mcpServers —— 确认实际结构后再写，脚本的扁平写入可能不符"
+    },
+
     "reasonix": {
       "display": "Reasonix",
       "verified": "partial",
-      "_verified_detail": "真机探测结论：Reasonix 是【工作区制】—— 技能目录在工作区内部的 .reasonix/skills/，例如 ~/.reasonix/global-workspace/.reasonix/skills/；MCP 配置在 ~/.reasonix/config.toml 的 [[plugins]] 段（数组表，不是字典）；工作区自己还有一份 <workspace>/reasonix.toml。因为不同工作区各有独立技能目录，装之前必须问用户当前用哪个工作区。",
+      "_verified_detail": "真机探测结论：Reasonix 是【工作区制】—— 技能目录在工作区内部的 .reasonix/skills/，例如 ~/.reasonix/global-workspace/.reasonix/skills/；MCP 配置在 ~/.reasonix/config.toml 的 [[plugins]] 段（数组表）。因为不同工作区各有独立技能目录，装之前必须问用户当前用哪个工作区。⚠️ 注意：官方文档（reasonix.io/docs）描述的是工作区内的 reasonix.toml + [[plugins]]，与真机探测到的 ~/.reasonix/config.toml 不完全一致，故仍标 partial。",
       "detect": ["~/.reasonix"],
       "skills": ["~/.reasonix/global-workspace/.reasonix/skills"],
       "skills_discovery": "~/.reasonix/*/.reasonix/skills",
-      "_skills_discovery_note": "因为工作区名不固定，用通配符搜索候选目录。detect.py 会把找到的全部列出来，让 agent 或用户挑当前那个。",
       "mcp": {
         "strategy": "toml",
         "file": "~/.reasonix/config.toml",
         "key": "plugins",
         "format": "toml",
-        "shape": "array",
-        "_shape_note": "Reasonix 的 [[plugins]] 是【数组表】（每个插件一个 [[plugins]] 块），不是 name→{...} 的字典。shape=array 时按追加条目处理。"
+        "shape": "array"
       },
       "confirm_hint": "问用户当前用哪个 Reasonix 工作区（技能要装进那个工作区的 .reasonix/skills/）；MCP 配置段名确认是 [[plugins]]"
-    },
-
-    "codex": {
-      "display": "Codex CLI",
-      "verified": false,
-      "_unverified": "路径未核实。agent 需现场确认后写入，doctor 会复核，猜错会被抓出来。",
-      "detect": ["~/.codex"],
-      "skills": ["~/.codex/skills"],
-      "mcp": {
-        "strategy": "toml",
-        "file": "~/.codex/config.toml",
-        "key": "mcp_servers",
-        "format": "toml"
-      },
-      "confirm_hint": "让用户确认 Codex 的配置路径与技能目录"
     }
+  },
+
+  "_not_supported": {
+    "_note": "这些工具当前【无法适配】，列在这里是为了让 agent 能如实回答用户，而不是去瞎试。",
+    "aider": "Aider 既无原生 MCP 支持，也不支持 SKILL.md 技能约定。如果用户用它，只能说明这个限制并建议改用其他宿主。",
+    "continue-dev": "Continue.dev 的 MCP 配置是 YAML（~/.continue/config.yaml），本脚本的写入逻辑只处理 JSON/TOML，暂不支持。技能目录（~/.continue/skills）来自第三方聚合站，官方文档未见 —— 未经核实。",
+    "vscode-copilot": "VS Code 内的 Copilot 走工作区 .vscode/mcp.json（段名 servers），是【项目级】而非用户级配置。要装到用户级需另开门路，暂不列为主机。",
+    "kilocode": "Kilo Code 的配置路径随 CLI / VS Code 两种形态差异很大，且官方文档对技能约定表述不清，暂不收录以免写错位置。",
+    "warp": "Warp 是终端而非通用 agent 宿主，MCP 配置为项目级，不适合批量投放技能。"
   }
 }

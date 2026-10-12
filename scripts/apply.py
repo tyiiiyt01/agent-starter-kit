@@ -37,7 +37,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 STATE_DIR = Path(os.path.expanduser("~")) / ".agent-starter-kit"
 STATE_FILE = STATE_DIR / "state.json"
 SHIM_DIR = STATE_DIR / "bin"
@@ -301,19 +301,26 @@ class AmbiguousSkillsDir(Exception):
         super().__init__(host)
 
 
-def resolve_skills_root(spec: dict, override: str | None = None) -> Path:
-    """决定技能装到哪。
+def resolve_skills_root(spec: dict, override: str | None = None) -> Path | None:
+    """决定技能装到哪。返回 None 表示该宿主不支持技能（只支持 MCP）。
 
-    优先级：显式 override > skills_discovery 找到的唯一目录 > 静态 skills[0]。
-    找到多个候选时抛 AmbiguousSkillsDir，由调用方要求用户指定。
+    优先级：skills_discovery 找到的唯一目录 > 静态 skills[0]。
+    `override`（--skill-dir）**只作用于工作区制宿主**（有 skills_discovery 的），
+    因为那种宿主的技能目录是通配符搜出来的、不固定，需要用户点名。
+    普通宿主用各自的技能目录 —— 否则多宿主场景下会被全部塞进同一个路径。
     """
-    if override:
-        return expand(override)
+    supports = bool(spec.get("skills") or spec.get("skills_discovery"))
+    if not supports:
+        return None  # 不支持技能的宿主，override 也不能凭空造出支持
+
     found = discover_skill_dirs(spec)
+    if len(found) > 1:
+        # 多个候选（多个工作区）：必须由用户指定，override 就是那个指定
+        if override:
+            return expand(override)
+        raise AmbiguousSkillsDir(spec.get("display", "未知宿主"), found)
     if len(found) == 1:
         return found[0]
-    if len(found) > 1:
-        raise AmbiguousSkillsDir(spec.get("display", "未知宿主"), found)
     return expand(spec["skills"][0])
 
 
@@ -482,10 +489,19 @@ def collect_cli_deps(pack_names: list[str], packs: dict) -> list[dict]:
 
 
 def plan_skills(pack_names: list[str], packs: dict, target_hosts: dict,
-                skill_dir: str | None = None) -> list[dict]:
+                skill_dir: str | None = None) -> tuple[list[dict], list[str]]:
+    """返回 (技能动作列表, 不支持技能的宿主名列表)。
+
+    有些宿主（Kiro / Amp）不支持 SKILL.md 约定，只能注册 MCP —— 对它们不投技能，
+    但要如实告诉用户，别让他以为装了技能。
+    """
     actions = []
+    skipped: list[str] = []
     for host_name, spec in target_hosts.items():
         dest_root = resolve_skills_root(spec, skill_dir)
+        if dest_root is None:
+            skipped.append(host_name)
+            continue
         for pack_name in pack_names:
             for skill in packs[pack_name].get("skills", []):
                 src = ROOT / "skills" / skill
@@ -495,7 +511,7 @@ def plan_skills(pack_names: list[str], packs: dict, target_hosts: dict,
                     "exists": (dest_root / skill).exists(),
                     "src_ok": (src / "SKILL.md").exists(),
                 })
-    return actions
+    return actions, skipped
 
 
 def plan_mcp(pack_names: list[str], packs: dict, target_hosts: dict,
@@ -823,9 +839,22 @@ def do_cli_dep(dep: dict, tier_limit: int, state: dict) -> str:
 # 计划渲染
 # --------------------------------------------------------------------------
 def render_plan(skills, mcps, py_deps, cli_deps, packs, pack_names, python_exe, tier_limit,
-                community=None, minimal_mcp=False, mirrors=True, gh_proxy="auto") -> str:
+                community=None, minimal_mcp=False, mirrors=True, gh_proxy="auto",
+                skills_skipped=None, hosts=None) -> str:
     community = community or []
+    skills_skipped = skills_skipped or []
+    hosts = hosts or {}
     L = [f"agent-starter-kit v{VERSION} —— 即将执行以下操作：", ""]
+
+    if skills_skipped:
+        L.append("【不支持技能的宿主】只注册 MCP，不投技能")
+        for h in skills_skipped:
+            disp = hosts.get(h, {}).get("display", h)
+            note = (hosts.get(h, {}).get("_skills_note")
+                    or "该宿主不使用 SKILL.md 技能约定")
+            L.append(f"  · {disp}（{h}）—— {note}")
+        L.append("  ⚠ 这属于工具本身的限制，不是安装失败。要如实告诉用户。")
+        L.append("")
 
     by_host: dict[str, list[dict]] = {}
     for a in skills:
@@ -1028,7 +1057,7 @@ def main() -> int:
     tier_limit = 0 if args.tier == "none" else TIER_ORDER[args.tier]
 
     try:
-        skills = plan_skills(pack_names, packs, target_hosts, args.skill_dir)
+        skills, skills_skipped = plan_skills(pack_names, packs, target_hosts, args.skill_dir)
         mcps = plan_mcp(pack_names, packs, target_hosts, minimal=args.minimal_mcp)
 
         # 社区技能：默认一个都不装。第三方仓库要么有许可约束、要么增长来源存疑、
@@ -1057,7 +1086,8 @@ def main() -> int:
     if args.dry_run:
         print(render_plan(skills, mcps, py_deps, cli_deps, packs, pack_names,
                           python_exe, tier_limit, community,
-                          args.minimal_mcp, not args.no_mirrors, args.gh_proxy))
+                          args.minimal_mcp, not args.no_mirrors, args.gh_proxy,
+                          skills_skipped, target_hosts))
         return 0
 
     state = load_state()

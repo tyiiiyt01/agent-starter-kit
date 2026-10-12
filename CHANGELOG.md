@@ -28,6 +28,29 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 
 ---
 
+## [0.2.1] - 2026-10-12
+
+> 宿主适配从 6 个扩到 **16 个**。想要可复现行为请锁这一版：
+> `git clone --branch v0.2.1 --depth 1 <仓库地址>`
+
+### Added
+
+- **宿主从 6 个扩到 16 个**，并给每条路径附上**官方文档来源**（见 `hosts.json` 的 `_source` 字段）。新增：Gemini CLI · Qwen Code · Windsurf · Cline · Roo Code · Zed · OpenCode · GitHub Copilot CLI · Kiro · Amp。核实分布：**11 个已由官方文档确认 / 5 个部分核实 / 0 个未核实**
+- `hosts.json` 新增 `_not_supported` 段，记录**当前无法适配的工具与原因**（Aider 两者都不支持、Continue.dev 用 YAML、VS Code 内 Copilot 是项目级配置、Kilo Code / Warp 路径差异过大）—— 让 agent 能如实回答用户，而不是去瞎试
+- 新增 `skills: []` 语义：**表示该宿主不支持技能，只能注册 MCP**。Kiro / Amp 属于此类（它们用 steering / AGENT.md 机制）。安装与自检会明确列出「不支持技能的宿主」并说明这是工具限制、不是安装失败
+
+### Fixed
+
+- **⚠️ Codex 的技能目录原本是错的**。旧记录写 `~/.codex/skills`，而 Codex 官方技能目录是 **`~/.agents/skills`**（用户级）与 `<项目>/.agents/skills`（项目级）。按旧记录会把技能写进一个 Codex 根本不读的目录 —— 这次按官方文档修正
+- **`--skill-dir` 在多宿主场景下会把所有宿主塞进同一个路径**。原实现把它当全局覆盖，4 个宿主组合时全部写进同一目录。现改为**只作用于工作区制宿主**（有 `skills_discovery` 的），普通宿主各用自己目录
+- `--skill-dir` 覆盖**不再能凭空为「不支持技能的宿主」造出技能目录** —— 覆盖前先判断该宿主是否支持技能
+
+### Changed
+
+- 发现并记录 **`.agents/skills/` 跨工具通用目录约定**：Cursor / Trae / Codex / Gemini CLI / Cline / Roo Code / Zed / GitHub Copilot **同时认这个目录**。装了多个这类工具时，写一份技能即可被共同读到
+
+---
+
 ## [0.2.0] - 2026-10-12
 
 > 相比 v0.1.0：office 技能重写为出版级路线、新增三项安全强化、新增环境安装引导。
