@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 安装产物（如果用户在仓库目录里跑安装）
+state.json
+
+# 编辑器 / 系统
+.DS_Store
+.vscode/
+.idea/

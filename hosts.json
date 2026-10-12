@@ -1,0 +1,111 @@
+{
+  "_note": "宿主适配表。新增宿主只改这一个文件。路径支持 ~ / %APPDATA% / %USERPROFILE%，由 scripts/detect.py 展开。",
+  "_schema": {
+    "detect": "判断宿主是否存在的路径，命中任意一个即视为已安装",
+    "skills": "技能投放目录，按顺序尝试，第一个可写的生效",
+    "mcp.strategy": "cli = 走宿主自带命令行写入（安全）；json/toml = 直接合并配置文件",
+    "verified": "true 表示已在真机核对过路径；false 表示未核实，必须由 agent 现场确认后写入",
+    "confirm_hint": "让用户在该宿主里操作哪一步可以读到真实路径"
+  },
+
+  "globals": {
+    "skillInstallMethod": "copy",
+    "_why": "Windows 创建符号链接需要管理员权限或开发者模式，为跨平台一致统一使用复制",
+    "encoding": "utf-8",
+    "_encoding_why": "Windows 默认可能是 GBK，写 JSON/Markdown 一律显式 UTF-8 且不带 BOM，否则中文乱码、配置解析失败",
+    "never_write_json_by_hand_if_strategy_is_cli": true
+  },
+
+  "hosts": {
+    "claude-code": {
+      "display": "Claude Code",
+      "verified": true,
+      "detect": ["~/.claude", "~/.claude.json"],
+      "skills": ["~/.claude/skills"],
+      "mcp": {
+        "strategy": "cli",
+        "cmd": ["claude", "mcp", "add", "--scope", "user"],
+        "file": "~/.claude.json",
+        "key": "mcpServers",
+        "_warning": "~/.claude.json 是混合大文件，必须走 claude mcp add，禁止整体覆盖写入"
+      }
+    },
+
+    "cursor": {
+      "display": "Cursor",
+      "verified": true,
+      "detect": ["~/.cursor"],
+      "skills": ["~/.cursor/skills"],
+      "mcp": {
+        "strategy": "json",
+        "file": "~/.cursor/mcp.json",
+        "key": "mcpServers"
+      }
+    },
+
+    "trae": {
+      "display": "Trae（国际版）",
+      "verified": true,
+      "detect": ["~/.trae", "~/Library/Application Support/Trae", "%APPDATA%/Trae"],
+      "skills": ["~/.trae/skills"],
+      "mcp": {
+        "strategy": "json",
+        "file": {
+          "darwin": "~/Library/Application Support/Trae/User/mcp.json",
+          "win32": "%APPDATA%/Trae/User/mcp.json",
+          "linux": "~/.config/Trae/User/mcp.json"
+        },
+        "key": "mcpServers"
+      },
+      "confirm_hint": "Trae 设置 → MCP → 打开配置文件，读它显示的真实路径"
+    },
+
+    "trae-cn": {
+      "display": "Trae CN（国内版）",
+      "verified": "partial",
+      "_verified_detail": "真机已确认主目录 ~/.trae-cn 与配置目录 '~/Library/Application Support/Trae CN'；skills 与 mcp.json 的确切文件名未经官方文档核实，装前必须用 confirm_hint 让用户确认。",
+      "detect": ["~/.trae-cn", "~/Library/Application Support/Trae CN", "%APPDATA%/Trae CN"],
+      "skills": ["~/.trae-cn/skills"],
+      "mcp": {
+        "strategy": "json",
+        "file": {
+          "darwin": "~/Library/Application Support/Trae CN/User/mcp.json",
+          "win32": "%APPDATA%/Trae CN/User/mcp.json",
+          "linux": "~/.config/Trae CN/User/mcp.json"
+        },
+        "key": "mcpServers"
+      },
+      "confirm_hint": "Trae CN 设置 → MCP → 打开配置文件，读它显示的真实路径再写入"
+    },
+
+    "reasonix": {
+      "display": "Reasonix",
+      "verified": "partial",
+      "_verified_detail": "真机已确认 ~/.reasonix/config.toml 存在（TOML 格式）；skills 目录未经核实。",
+      "detect": ["~/.reasonix"],
+      "skills": ["~/.reasonix/skills"],
+      "mcp": {
+        "strategy": "toml",
+        "file": "~/.reasonix/config.toml",
+        "key": "mcp_servers",
+        "format": "toml"
+      },
+      "confirm_hint": "让用户确认 Reasonix 的技能目录与 MCP 配置段名"
+    },
+
+    "codex": {
+      "display": "Codex CLI",
+      "verified": false,
+      "_unverified": "路径未核实。agent 需现场确认后写入，doctor 会复核，猜错会被抓出来。",
+      "detect": ["~/.codex"],
+      "skills": ["~/.codex/skills"],
+      "mcp": {
+        "strategy": "toml",
+        "file": "~/.codex/config.toml",
+        "key": "mcp_servers",
+        "format": "toml"
+      },
+      "confirm_hint": "让用户确认 Codex 的配置路径与技能目录"
+    }
+  }
+}

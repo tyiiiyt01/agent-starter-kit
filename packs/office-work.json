@@ -1,0 +1,59 @@
+{
+  "name": "office-work",
+  "display": "办公协作",
+  "for": "职场办公人群：整理会议纪要、处理邮件与日程",
+  "skills": ["meeting-notes", "email-calendar"],
+  "mcp": [],
+  "pythonDeps": [
+    {
+      "pip": "faster-whisper",
+      "import": "faster_whisper",
+      "tier": "medium",
+      "why": "本地把会议录音转成文字（medium 档，另需下载语音模型）"
+    }
+  ],
+  "cliDeps": [
+    {
+      "name": "ffmpeg",
+      "bins": ["ffmpeg"],
+      "tier": "medium",
+      "why": "音视频转码 / 抽音频（meeting-notes 处理录音格式时用）",
+      "knownPaths": {
+        "darwin": ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg"],
+        "win32": ["%LOCALAPPDATA%/Microsoft/WinGet/Links/ffmpeg.exe"],
+        "linux": ["/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg"]
+      },
+      "install": {
+        "darwin": "brew install ffmpeg",
+        "win32": "winget install Gyan.FFmpeg",
+        "linux": "sudo apt-get install -y ffmpeg"
+      },
+      "fallback": "没有 ffmpeg 时只能用已经是 wav/mp3 的音频，无法转码其他格式或从视频里抽出音轨"
+    },
+    {
+      "name": "soffice",
+      "bins": ["soffice"],
+      "tier": "heavy",
+      "why": "LibreOffice 无头转换：会议纪要 docx → PDF（约 700MB，永不自动安装）",
+      "probe": ["soffice", "--version"],
+      "knownPaths": {
+        "darwin": ["/Applications/LibreOffice.app/Contents/MacOS/soffice"],
+        "win32": ["%ProgramFiles%/LibreOffice/program/soffice.exe"],
+        "linux": ["/usr/bin/soffice", "/usr/lib/libreoffice/program/soffice"]
+      },
+      "install": {
+        "darwin": "brew install --cask libreoffice",
+        "linux": "sudo apt-get install -y libreoffice"
+      },
+      "fallback": "没有 soffice 时纪要无法转 PDF；可改用 python-docx 直接生成 Word 纪要，或 pandoc 转 Markdown 交付"
+    }
+  ],
+  "manual": [
+    "飞书 / 钉钉 / 企业微信都各有官方 MCP，但准确的包名与启动命令需以各开放平台文档为准，且需要企业/组织凭证，本仓库不代装。要用时先到对应开放平台（飞书开放平台 / 钉钉开放平台 / 企业微信开发者中心）创建应用、拿到客户端凭证，再按官方文档把 MCP 配到你的助手里",
+    "没有协作平台 MCP 时，会议、邮件、日程这些平台内的数据助手读不到：只能处理你手动导出的文件（录音、导出的会议记录、.eml/.msg 邮件等）",
+    "faster-whisper 是 medium 档：需显式 --tier medium 才会自动安装，且首次转写还要联网下载语音模型（几百 MB 到 GB）。不装时无法本地把录音转文字，可改用其他在线转写服务",
+    "模型下载必须配镜像：faster-whisper 首次运行要下语音模型，必须设 HF_ENDPOINT=https://hf-mirror.com，否则国内基本下不动（apply.py 已生成 ~/.agent-starter-kit/mirrors.env，source 一下即可）",
+    "soffice 默认要写 ~/Library/Application Support/LibreOffice，在权限受限环境下会报 User installation could not be completed：必须加环境变量参数 -env:UserInstallation=file:///tmp/lo_profile",
+    "macOS 装 .app 的坑：解压 .app 必须用 ditto -x -k 而不是 unzip（unzip 会破坏应用签名，打开时提示「已损坏，无法打开」）；也不要从 ~/Downloads 直接运行带 quarantine 的 app，App Translocation 会让它从只读的随机路径运行，需先拖到 /Applications"
+  ]
+}

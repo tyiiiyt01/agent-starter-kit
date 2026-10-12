@@ -1,0 +1,135 @@
+{
+  "name": "math-modeling",
+  "display": "数学建模竞赛",
+  "for": "参加数学建模竞赛、需要建模求解与画图出论文的本科生",
+  "skills": ["math-modeling"],
+  "mcp": [
+    {
+      "name": "filesystem",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "{{HOME}}"],
+      "why": "让 AI 能读写你的代码、数据与论文文件。⚠️ MCP 会占用不少上下文（实测 3 个 MCP 就能吃掉 200k 上下文的 72%），装多了 agent 会变笨，--minimal-mcp 只装 essential 的它",
+      "essential": true
+    }
+  ],
+  "pythonDeps": [
+    {
+      "pip": "numpy",
+      "import": "numpy",
+      "tier": "light",
+      "why": "数值计算，一切建模的基础"
+    },
+    {
+      "pip": "matplotlib",
+      "import": "matplotlib",
+      "tier": "light",
+      "why": "画图与结果可视化（含中文字体配置）"
+    },
+    {
+      "pip": "pandas",
+      "import": "pandas",
+      "tier": "light",
+      "why": "读取与清洗赛题提供的数据表"
+    },
+    {
+      "pip": "networkx",
+      "import": "networkx",
+      "tier": "light",
+      "why": "图论建模、最短路与网络分析"
+    },
+    {
+      "pip": "sympy",
+      "import": "sympy",
+      "tier": "light",
+      "why": "符号计算（公式推导、解方程、化简），数模和课程作业刚需"
+    },
+    {
+      "pip": "scipy",
+      "import": "scipy",
+      "tier": "medium",
+      "why": "优化 / 插值 / 积分 / ODE 求解，数模核心库"
+    },
+    {
+      "pip": "pulp",
+      "import": "pulp",
+      "tier": "medium",
+      "why": "线性 / 整数规划建模求解"
+    },
+    {
+      "pip": "cvxpy",
+      "import": "cvxpy",
+      "tier": "medium",
+      "why": "凸优化建模求解"
+    },
+    {
+      "pip": "scikit-learn",
+      "import": "sklearn",
+      "tier": "medium",
+      "why": "分类 / 回归 / 聚类，数据类赛题常用"
+    },
+    {
+      "pip": "statsmodels",
+      "import": "statsmodels",
+      "tier": "medium",
+      "why": "统计检验与时间序列分析"
+    },
+    {
+      "pip": "scikit-opt",
+      "import": "sko",
+      "tier": "medium",
+      "why": "现成的遗传算法 / 粒子群等启发式算法"
+    },
+    {
+      "pip": "deap",
+      "import": "deap",
+      "tier": "medium",
+      "why": "自定义进化算法框架"
+    },
+    {
+      "pip": "pymoo",
+      "import": "pymoo",
+      "tier": "medium",
+      "why": "多目标优化"
+    }
+  ],
+  "cliDeps": [
+    {
+      "name": "pandoc",
+      "bins": ["pandoc"],
+      "tier": "light",
+      "why": "文档格式互转（Markdown / docx / LaTeX / HTML 互转）",
+      "knownPaths": {
+        "darwin": ["/opt/homebrew/bin/pandoc", "/usr/local/bin/pandoc"],
+        "win32": ["%LOCALAPPDATA%/Pandoc/pandoc.exe", "%ProgramFiles%/Pandoc/pandoc.exe"],
+        "linux": ["/usr/bin/pandoc", "/usr/local/bin/pandoc"]
+      },
+      "install": {
+        "darwin": "brew install pandoc",
+        "win32": "winget install --id JohnMacFarlane.Pandoc -e",
+        "linux": "sudo apt-get install -y pandoc"
+      },
+      "fallback": "没有 pandoc 时，输入方向改用 markitdown 转 Markdown；输出方向用 python-docx（Word）、pypdf（PDF）等库直接生成"
+    },
+    {
+      "name": "tectonic",
+      "bins": ["tectonic"],
+      "tier": "light",
+      "why": "LaTeX 编译（单二进制约 50MB，按需下载宏包，替代体积巨大的 TeX 发行版）",
+      "knownPaths": {
+        "darwin": ["/opt/homebrew/bin/tectonic", "/usr/local/bin/tectonic"],
+        "win32": ["%LOCALAPPDATA%/Tectonic/tectonic.exe", "%LOCALAPPDATA%/Microsoft/WinGet/Links/tectonic.exe", "%USERPROFILE%/.cargo/bin/tectonic.exe"],
+        "linux": ["/usr/bin/tectonic", "/usr/local/bin/tectonic", "~/.cargo/bin/tectonic"]
+      },
+      "install": {
+        "darwin": "brew install tectonic",
+        "win32": "winget install TectonicProject.Tectonic"
+      },
+      "fallback": "没有 tectonic 时无法本地编译 PDF，只能生成 .tex 源码交给用户自行编译；或用 pandoc 尽量转出近似排版（公式与模板效果会打折）"
+    }
+  ],
+  "manual": [
+    "filesystem MCP 用 npx 启动，需先装 Node.js（macOS: brew install node；Windows: winget install OpenJS.NodeJS）",
+    "数模常用 MATLAB，但本仓库不自动装（商业授权 + 数十 GB）：有学校授权的自行安装；没有可用 Octave 跑 .m 兼容语法（macOS: brew install octave；Windows 到 Octave 官网下载安装包）",
+    "数模论文常用 LaTeX：本包用 tectonic 编译，首次编译会联网按需下载宏包（国内可能较慢）；若学校模板要求完整 TeX Live，请另行安装"
+  ]
+}

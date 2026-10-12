@@ -1,0 +1,43 @@
+{
+  "name": "design",
+  "display": "设计素材与图像处理",
+  "for": "做社团/宣传活动物料、学生工作、需要处理图片的人",
+  "skills": ["design-material"],
+  "mcp": [
+    {
+      "name": "filesystem",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "{{HOME}}"],
+      "why": "让 AI 能读写你的图片与素材文件。⚠️ MCP 会占用不少上下文（实测 3 个 MCP 就能吃掉 200k 上下文的 72%），装多了 agent 会变笨，--minimal-mcp 只装 essential 的它",
+      "essential": true
+    }
+  ],
+  "pythonDeps": [
+    {
+      "pip": "Pillow",
+      "import": "PIL",
+      "tier": "light",
+      "why": "图像批处理：缩放、裁剪、转格式、拼接、加文字（注意 import 名是 PIL 不是 Pillow）"
+    },
+    {
+      "pip": "qrcode",
+      "import": "qrcode",
+      "tier": "light",
+      "why": "生成二维码，用于活动物料、报名入口"
+    },
+    {
+      "pip": "psd-tools",
+      "import": "psd_tools",
+      "tier": "medium",
+      "why": "读取 Photoshop .psd 源文件的图层与文字，做设计稿信息提取（不修改 psd，只读）"
+    }
+  ],
+  "cliDeps": [],
+  "manual": [
+    "字体版权要当心：海报/宣传物料若涉及商用，需确认字体授权。推荐优先使用可商用的开源中文字体（如思源黑体 / Noto Sans CJK / 霞鹜文楷）",
+    "中文字体在不同系统路径完全不同：macOS 常见于 /System/Library/Fonts 与 ~/Library/Fonts，Windows 在 C:\\Windows\\Fonts。用 Pillow 加载字体时必须给绝对路径，写错就报错或变方框",
+    "Pillow 与 matplotlib 的字体配置是两套机制：matplotlib 走 plt.rcParams['font.sans-serif']，Pillow 走 ImageFont.truetype(路径, 字号)。两者不通用，别混",
+    "ai 适合做批处理和结构化排版（批量改尺寸、统一加水印、生成二维码卡片），真正的创意设计仍需人来做 —— 不要期待 AI 直接产出专业海报",
+    "不要用 AI 生成或拼贴可能侵权的素材（明星照片、品牌 logo、未授权插画）用于公开宣传"
+  ]
+}

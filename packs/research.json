@@ -1,0 +1,135 @@
+{
+  "name": "research",
+  "display": "文献检索与管理",
+  "for": "写论文、做课题，需要查文献与整理参考文献的学生和研究者",
+  "skills": ["paper-research", "cn-literature", "citation-management", "web-research"],
+  "mcp": [
+    {
+      "name": "arxiv",
+      "command": "uvx",
+      "args": ["arxiv-mcp-server"],
+      "why": "检索 arXiv 上的论文预印本。⚠️ MCP 会占用不少上下文（实测 3 个 MCP 就能吃掉 200k 上下文的 72%），装多了 agent 会变笨，--minimal-mcp 只装 essential 的它",
+      "essential": true
+    },
+    {
+      "name": "semantic-scholar",
+      "command": "uvx",
+      "args": ["--from", "semantic-scholar-fastmcp", "semantic-scholar-fastmcp"],
+      "why": "按主题检索文献、查引用数与作者信息。⚠️ 会占用不少上下文，非必需，建议按需再开",
+      "optional": true
+    },
+    {
+      "name": "zotero",
+      "command": "uvx",
+      "args": ["--from", "zotero-mcp-server", "zotero-mcp"],
+      "why": "直连本地 Zotero 文库，读取条目与附件。⚠️ 会占用不少上下文，非必需，建议按需再开",
+      "optional": true
+    }
+  ],
+  "pythonDeps": [
+    {
+      "pip": "pypdf",
+      "import": "pypdf",
+      "tier": "light",
+      "why": "合并/拆分/提取 PDF 文本，整理下载的文献"
+    },
+    {
+      "pip": "PyMuPDF",
+      "import": "fitz",
+      "tier": "light",
+      "why": "PDF 文本/图片提取、渲染，用纯 Python 替代需要装二进制的 poppler（⚠️ AGPL 许可，商用需注意）"
+    },
+    {
+      "pip": "beautifulsoup4",
+      "import": "bs4",
+      "tier": "light",
+      "why": "解析网页 HTML，做数据调研"
+    },
+    {
+      "pip": "lxml",
+      "import": "lxml",
+      "tier": "light",
+      "why": "HTML/XML 解析后端，bs4 需要它才快"
+    },
+    {
+      "pip": "tabulate",
+      "import": "tabulate",
+      "tier": "light",
+      "why": "把数据渲染成 Markdown / 文本表格"
+    },
+    {
+      "pip": "rapidocr-onnxruntime",
+      "import": "rapidocr_onnxruntime",
+      "tier": "medium",
+      "why": "中文 OCR，纯 ONNX 无需装二进制（扫描件识别）"
+    },
+    {
+      "pip": "docling",
+      "import": "docling",
+      "tier": "heavy",
+      "why": "IBM 出品，复杂表格/公式/多栏 PDF 高保真转 Markdown。约 2.4GB（含视觉模型），永不自动装"
+    }
+  ],
+  "cliDeps": [
+    {
+      "name": "markitdown",
+      "bins": ["markitdown"],
+      "tier": "light",
+      "why": "把 PDF / Word / PPT / Excel 等文档转成 Markdown，便于喂给 AI 精读",
+      "knownPaths": {
+        "darwin": ["~/.local/bin/markitdown", "/opt/homebrew/bin/markitdown"],
+        "win32": ["%APPDATA%/Python/Scripts/markitdown.exe"],
+        "linux": ["~/.local/bin/markitdown", "/usr/local/bin/markitdown"]
+      },
+      "install": {
+        "darwin": "python3 -m pip install --user markitdown",
+        "win32": "py -m pip install --user markitdown",
+        "linux": "python3 -m pip install --user markitdown"
+      },
+      "fallback": "没有 markitdown 时改用 pandoc 做格式转换，或用 python-docx / pypdf 分别读取文档后自行拼接为 Markdown"
+    },
+    {
+      "name": "poppler",
+      "bins": ["pdftotext", "pdftoppm", "pdfinfo"],
+      "tier": "medium",
+      "why": "PDF 取文本（pdftotext）、转图片（pdftoppm）、读元信息（pdfinfo）。多数场景已被 PyMuPDF 覆盖，仅在需要原版 poppler 命令行时才装",
+      "probe": ["pdftotext", "-v"],
+      "knownPaths": {
+        "darwin": ["/opt/homebrew/bin/pdftotext", "/usr/local/bin/pdftotext"],
+        "win32": ["%ProgramFiles%/poppler/Library/bin/pdftotext.exe", "%LOCALAPPDATA%/poppler/Library/bin/pdftotext.exe"],
+        "linux": ["/usr/bin/pdftotext", "/usr/local/bin/pdftotext"]
+      },
+      "install": {
+        "darwin": "brew install poppler",
+        "linux": "sudo apt-get install -y poppler-utils"
+      },
+      "fallback": "改用 PyMuPDF（已随包安装）做 PDF 文本/图片提取与渲染，纯 pip 免 sudo 无需系统二进制；扫描件文字另需 OCR（rapidocr-onnxruntime）"
+    },
+    {
+      "name": "pdf2zh",
+      "bins": ["pdf2zh"],
+      "tier": "medium",
+      "why": "PDF 中英互译并保留原排版，用于外文文献精读",
+      "knownPaths": {
+        "darwin": ["~/.local/bin/pdf2zh", "/opt/homebrew/bin/pdf2zh"],
+        "win32": ["%APPDATA%/Python/Scripts/pdf2zh.exe"],
+        "linux": ["~/.local/bin/pdf2zh", "/usr/local/bin/pdf2zh"]
+      },
+      "install": {
+        "darwin": "python3 -m pip install --user pdf2zh",
+        "win32": "py -m pip install --user pdf2zh",
+        "linux": "python3 -m pip install --user pdf2zh"
+      },
+      "fallback": "pdf2zh 需要 Python 3.10–3.12（3.13 装不上）。装不了时用 PyMuPDF / poppler 的 pdftotext 取文本或 markitdown 转 Markdown，让 AI 直接在文本上翻译（会丢失原始排版）"
+    }
+  ],
+  "manual": [
+    "arxiv / semantic-scholar / zotero 三个 MCP 都通过 uvx 启动，需先装 uv：macOS/Linux 运行 curl -LsSf https://astral.sh/uv/install.sh | sh；Windows 运行 winget install astral-sh.uv",
+    "zotero MCP 需要本机装有 Zotero 7，并在「编辑 → 首选项 → 高级」勾选 “Allow other applications on this computer to communicate with Zotero”，否则连不上本地文库",
+    "semantic-scholar 可选填 Semantic Scholar API Key 以提高请求配额（不填也能用）；要填就到 Semantic Scholar 官网申请后填进该 MCP 的 env",
+    "pdf2zh 依赖 Python 3.10–3.12（3.13 装不上）；高质量的 PDF 翻译还需自备 LLM API Key（如 DeepSeek / OpenAI），否则只能走较弱的默认翻译",
+    "cn-literature 只做合规检索，不绕过 CNKI / 万方等付费库；没有校园网权限时只能检索可公开访问的来源",
+    "模型下载必须配镜像：pdf2zh / docling 首次运行要下模型，必须设 HF_ENDPOINT=https://hf-mirror.com，否则国内基本下不动（apply.py 已生成 ~/.agent-starter-kit/mirrors.env，source 一下即可）",
+    "国内直连 GitHub Releases 常掉到 30 KB/s，加 https://gh-proxy.com/ 前缀可到 4-8 MB/s（apply.py --gh-proxy auto 已内置多路回退）"
+  ]
+}

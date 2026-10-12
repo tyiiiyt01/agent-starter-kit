@@ -1,0 +1,127 @@
+{
+  "name": "writing",
+  "display": "论文写作与排版",
+  "for": "要写课程论文、毕设、实验报告并做规范排版的学生",
+  "skills": ["thesis-format", "academic-figures", "lab-report"],
+  "mcp": [],
+  "pythonDeps": [
+    {
+      "pip": "matplotlib",
+      "import": "matplotlib",
+      "tier": "light",
+      "why": "画论文插图（含中文字体配置）"
+    },
+    {
+      "pip": "seaborn",
+      "import": "seaborn",
+      "tier": "light",
+      "why": "统计图表，比 matplotlib 默认样式好看（academic-figures 用得上）"
+    },
+    {
+      "pip": "SciencePlots",
+      "import": "scienceplots",
+      "tier": "light",
+      "why": "学术期刊风格的图表样式（IEEE / Nature 等）"
+    },
+    {
+      "pip": "PyMuPDF",
+      "import": "fitz",
+      "tier": "light",
+      "why": "PDF 文本/图片提取、渲染，用纯 Python 替代需要装二进制的 poppler（⚠️ AGPL 许可，商用需注意）"
+    },
+    {
+      "pip": "uncertainties",
+      "import": "uncertainties",
+      "tier": "light",
+      "why": "误差传递与有效数字计算，实验报告常用"
+    },
+    {
+      "pip": "python-docx",
+      "import": "docx",
+      "tier": "light",
+      "why": "按学校格式要求生成 / 修改 Word 论文"
+    },
+    {
+      "pip": "docxtpl",
+      "import": "docxtpl",
+      "tier": "light",
+      "why": "用 Jinja2 占位符模板批量生成文档与报告"
+    }
+  ],
+  "cliDeps": [
+    {
+      "name": "pandoc",
+      "bins": ["pandoc"],
+      "tier": "light",
+      "why": "文档格式互转（Markdown / docx / LaTeX / HTML 互转）",
+      "knownPaths": {
+        "darwin": ["/opt/homebrew/bin/pandoc", "/usr/local/bin/pandoc"],
+        "win32": ["%LOCALAPPDATA%/Pandoc/pandoc.exe", "%ProgramFiles%/Pandoc/pandoc.exe"],
+        "linux": ["/usr/bin/pandoc", "/usr/local/bin/pandoc"]
+      },
+      "install": {
+        "darwin": "brew install pandoc",
+        "win32": "winget install --id JohnMacFarlane.Pandoc -e",
+        "linux": "sudo apt-get install -y pandoc"
+      },
+      "fallback": "没有 pandoc 时，输入方向改用 markitdown 转 Markdown；输出方向用 python-docx（Word）按模板生成，公式与 LaTeX 交给 tectonic"
+    },
+    {
+      "name": "tectonic",
+      "bins": ["tectonic"],
+      "tier": "light",
+      "why": "LaTeX 编译（单二进制约 50MB，按需下载宏包，替代体积巨大的 TeX 发行版）",
+      "knownPaths": {
+        "darwin": ["/opt/homebrew/bin/tectonic", "/usr/local/bin/tectonic"],
+        "win32": ["%LOCALAPPDATA%/Tectonic/tectonic.exe", "%LOCALAPPDATA%/Microsoft/WinGet/Links/tectonic.exe", "%USERPROFILE%/.cargo/bin/tectonic.exe"],
+        "linux": ["/usr/bin/tectonic", "/usr/local/bin/tectonic", "~/.cargo/bin/tectonic"]
+      },
+      "install": {
+        "darwin": "brew install tectonic",
+        "win32": "winget install TectonicProject.Tectonic"
+      },
+      "fallback": "没有 tectonic 时无法本地编译 PDF，只能生成 .tex 源码交给用户自行编译；或用 pandoc 尽量转出近似排版（公式与模板效果会打折）"
+    },
+    {
+      "name": "soffice",
+      "bins": ["soffice"],
+      "tier": "heavy",
+      "why": "LibreOffice 无头转换：docx / pptx → PDF（约 700MB，永不自动安装）",
+      "probe": ["soffice", "--version"],
+      "knownPaths": {
+        "darwin": ["/Applications/LibreOffice.app/Contents/MacOS/soffice"],
+        "win32": ["%ProgramFiles%/LibreOffice/program/soffice.exe"],
+        "linux": ["/usr/bin/soffice", "/usr/lib/libreoffice/program/soffice"]
+      },
+      "install": {
+        "darwin": "brew install --cask libreoffice",
+        "linux": "sudo apt-get install -y libreoffice"
+      },
+      "fallback": "没有 soffice 时无法把 docx/pptx 无损转 PDF；可改用 pandoc + tectonic 走 LaTeX 重排导出，或用 docx2pdf（需本机装有 Microsoft Office），排版会有差异"
+    },
+    {
+      "name": "poppler",
+      "bins": ["pdftotext", "pdftoppm", "pdfinfo"],
+      "tier": "medium",
+      "why": "PDF 取文本与转图片，用于核对排版与生成预览图。多数场景已被 PyMuPDF 覆盖，仅在需要原版 poppler 命令行时才装",
+      "probe": ["pdftotext", "-v"],
+      "knownPaths": {
+        "darwin": ["/opt/homebrew/bin/pdftotext", "/usr/local/bin/pdftotext"],
+        "win32": ["%ProgramFiles%/poppler/Library/bin/pdftotext.exe", "%LOCALAPPDATA%/poppler/Library/bin/pdftotext.exe"],
+        "linux": ["/usr/bin/pdftotext", "/usr/local/bin/pdftotext"]
+      },
+      "install": {
+        "darwin": "brew install poppler",
+        "linux": "sudo apt-get install -y poppler-utils"
+      },
+      "fallback": "改用 PyMuPDF（已随包安装）提取文本、渲染预览图，纯 pip 免 sudo；渲染预览图的能力不会缺失"
+    }
+  ],
+  "manual": [
+    "tectonic 首次编译会自动联网下载所需宏包，国内网络可能较慢；若学校模板依赖未收录的宏包或要求完整 TeX Live，请另行安装 TeX Live / MacTeX",
+    "soffice（LibreOffice，约 700MB）永不自动安装：需要把 docx/pptx 转成 PDF 时自行安装（macOS: brew install --cask libreoffice；Windows 到 LibreOffice 官网下载安装包）",
+    "macOS 装 .app 的坑：解压 .app 必须用 ditto -x -k 而不是 unzip（unzip 会破坏应用签名，打开时提示「已损坏，无法打开」）；也不要从 ~/Downloads 直接运行带 quarantine 的 app，App Translocation 会让它从只读的随机路径运行，需先拖到 /Applications",
+    "学术图表的中文标签需在 matplotlib 里指定中文字体（如 SimHei、Noto Sans CJK），否则会显示成方框；SciencePlots 样式需 matplotlib 支持",
+    "docxtpl 依赖 Jinja2 并在 Word 模板里用 {{ 占位符 }} 标记：若学校提供固定模板，请按模板已有占位符调整，不要改动学校要求的版式"
+  ]
+}

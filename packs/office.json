@@ -1,0 +1,149 @@
+{
+  "name": "office",
+  "display": "文档与数据",
+  "for": "办公人群：日常处理 Word / Excel / PPT / PDF 与数据表格",
+  "skills": ["office-docs", "data-analysis", "doc-batch"],
+  "mcp": [
+    {
+      "name": "filesystem",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "{{HOME}}"],
+      "why": "让 AI 能读写你本地的文档与数据文件。⚠️ MCP 会占用不少上下文（实测 3 个 MCP 就能吃掉 200k 上下文的 72%），装多了 agent 会变笨，--minimal-mcp 只装 essential 的它",
+      "essential": true
+    }
+  ],
+  "pythonDeps": [
+    {
+      "pip": "python-docx",
+      "import": "docx",
+      "tier": "light",
+      "why": "读写 Word（.docx）文件"
+    },
+    {
+      "pip": "openpyxl",
+      "import": "openpyxl",
+      "tier": "light",
+      "why": "读写 Excel（.xlsx）文件"
+    },
+    {
+      "pip": "xlsxwriter",
+      "import": "xlsxwriter",
+      "tier": "light",
+      "why": "写 Excel 并带格式/图表/条件格式"
+    },
+    {
+      "pip": "python-pptx",
+      "import": "pptx",
+      "tier": "light",
+      "why": "读写 PPT（.pptx）文件"
+    },
+    {
+      "pip": "pypdf",
+      "import": "pypdf",
+      "tier": "light",
+      "why": "PDF 合并 / 拆分 / 提取文本"
+    },
+    {
+      "pip": "docxtpl",
+      "import": "docxtpl",
+      "tier": "light",
+      "why": "用 Jinja2 模板批量生成文档（doc-batch）"
+    },
+    {
+      "pip": "pandas",
+      "import": "pandas",
+      "tier": "light",
+      "why": "表格数据清洗与统计分析"
+    },
+    {
+      "pip": "numpy",
+      "import": "numpy",
+      "tier": "light",
+      "why": "数值计算"
+    },
+    {
+      "pip": "matplotlib",
+      "import": "matplotlib",
+      "tier": "light",
+      "why": "数据图表绘制（含中文字体配置）"
+    },
+    {
+      "pip": "seaborn",
+      "import": "seaborn",
+      "tier": "light",
+      "why": "统计图表，比 matplotlib 默认样式好看"
+    },
+    {
+      "pip": "tabulate",
+      "import": "tabulate",
+      "tier": "light",
+      "why": "把数据渲染成 Markdown / 文本表格"
+    },
+    {
+      "pip": "rapidocr-onnxruntime",
+      "import": "rapidocr_onnxruntime",
+      "tier": "medium",
+      "why": "中文 OCR，纯 ONNX 无需装二进制（扫描件/图片转文字）"
+    }
+  ],
+  "cliDeps": [
+    {
+      "name": "pandoc",
+      "bins": ["pandoc"],
+      "tier": "light",
+      "why": "文档格式互转（Markdown / docx / HTML / LaTeX 互转）",
+      "knownPaths": {
+        "darwin": ["/opt/homebrew/bin/pandoc", "/usr/local/bin/pandoc"],
+        "win32": ["%LOCALAPPDATA%/Pandoc/pandoc.exe", "%ProgramFiles%/Pandoc/pandoc.exe"],
+        "linux": ["/usr/bin/pandoc", "/usr/local/bin/pandoc"]
+      },
+      "install": {
+        "darwin": "brew install pandoc",
+        "win32": "winget install --id JohnMacFarlane.Pandoc -e",
+        "linux": "sudo apt-get install -y pandoc"
+      },
+      "fallback": "没有 pandoc 时，输入方向改用 markitdown 转 Markdown；输出方向用 python-docx / python-pptx 直接生成目标文档"
+    },
+    {
+      "name": "markitdown",
+      "bins": ["markitdown"],
+      "tier": "light",
+      "why": "把 PDF / Word / PPT / Excel 等文档转成 Markdown，便于喂给 AI 处理",
+      "knownPaths": {
+        "darwin": ["~/.local/bin/markitdown", "/opt/homebrew/bin/markitdown"],
+        "win32": ["%APPDATA%/Python/Scripts/markitdown.exe"],
+        "linux": ["~/.local/bin/markitdown", "/usr/local/bin/markitdown"]
+      },
+      "install": {
+        "darwin": "python3 -m pip install --user markitdown",
+        "win32": "py -m pip install --user markitdown",
+        "linux": "python3 -m pip install --user markitdown"
+      },
+      "fallback": "没有 markitdown 时改用 pandoc 做格式转换，或用 python-docx / openpyxl / python-pptx / pypdf 分别读取文档后自行拼接为 Markdown"
+    },
+    {
+      "name": "soffice",
+      "bins": ["soffice"],
+      "tier": "heavy",
+      "why": "LibreOffice 无头转换：docx / pptx / xlsx → PDF（约 700MB，永不自动安装）",
+      "probe": ["soffice", "--version"],
+      "knownPaths": {
+        "darwin": ["/Applications/LibreOffice.app/Contents/MacOS/soffice"],
+        "win32": ["%ProgramFiles%/LibreOffice/program/soffice.exe"],
+        "linux": ["/usr/bin/soffice", "/usr/lib/libreoffice/program/soffice"]
+      },
+      "install": {
+        "darwin": "brew install --cask libreoffice",
+        "linux": "sudo apt-get install -y libreoffice"
+      },
+      "fallback": "没有 soffice 时无法做 Office→PDF 的无损转换；可改用 pandoc（+ tectonic）重排导出 PDF，复杂版式的还原度会下降"
+    }
+  ],
+  "manual": [
+    "旧格式 .doc / .xls / .ppt（Office 97-2003）这些 Python 库读不了：请先用 Office 另存为 .docx / .xlsx / .pptx；确需转换可自行安装 LibreOffice（soffice）",
+    "soffice（LibreOffice，约 700MB）永不自动安装：需要 docx/pptx → PDF 时自行安装（macOS: brew install --cask libreoffice；Windows 到 LibreOffice 官网下载安装包）",
+    "soffice 默认要写 ~/Library/Application Support/LibreOffice，在权限受限环境下会报 User installation could not be completed：必须加环境变量参数 -env:UserInstallation=file:///tmp/lo_profile",
+    "filesystem MCP 用 npx 启动，需先装 Node.js（macOS: brew install node；Windows: winget install OpenJS.NodeJS）",
+    "这些库只做文件级读写，无法驱动正在打开的 Word / Excel 窗口；操作前请先关闭对应文件，避免被占用或覆盖未保存的改动"
+  ]
+}

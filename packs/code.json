@@ -1,0 +1,54 @@
+{
+  "name": "code",
+  "display": "编程能力",
+  "for": "理工科学生、需要写代码做课程项目或刷题的人",
+  "skills": ["python-workflow", "cpp-workflow"],
+  "mcp": [
+    {
+      "name": "filesystem",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "{{HOME}}"],
+      "why": "让 AI 能读写你的项目文件与代码目录。⚠️ MCP 会占用不少上下文（实测 3 个 MCP 就能吃掉 200k 上下文的 72%），装多了 agent 会变笨，--minimal-mcp 只装 essential 的它",
+      "essential": true
+    }
+  ],
+  "pythonDeps": [
+    {
+      "pip": "numpy",
+      "import": "numpy",
+      "tier": "light",
+      "why": "数值计算，Python 算法与数据练习的基础库"
+    },
+    {
+      "pip": "matplotlib",
+      "import": "matplotlib",
+      "tier": "light",
+      "why": "画图与结果可视化（含中文字体配置）"
+    }
+  ],
+  "cliDeps": [
+    {
+      "name": "pandoc",
+      "bins": ["pandoc"],
+      "tier": "light",
+      "why": "文档格式互转（Markdown / docx / LaTeX / HTML 互转）",
+      "knownPaths": {
+        "darwin": ["/opt/homebrew/bin/pandoc", "/usr/local/bin/pandoc"],
+        "win32": ["%LOCALAPPDATA%/Pandoc/pandoc.exe", "%ProgramFiles%/Pandoc/pandoc.exe"],
+        "linux": ["/usr/bin/pandoc", "/usr/local/bin/pandoc"]
+      },
+      "install": {
+        "darwin": "brew install pandoc",
+        "win32": "winget install --id JohnMacFarlane.Pandoc -e",
+        "linux": "sudo apt-get install -y pandoc"
+      },
+      "fallback": "没有 pandoc 时，输入方向改用 markitdown 把各类文档转成 Markdown；输出方向用 python-docx（Word）、python-pptx（PPT）、pypdf（PDF）等库直接生成"
+    }
+  ],
+  "manual": [
+    "filesystem MCP 用 npx 启动，需先装 Node.js，否则该 MCP 无法启用（macOS: brew install node；Windows: winget install OpenJS.NodeJS）",
+    "写 C++ 需要编译器：macOS 运行 xcode-select --install（会弹系统窗口，点安装）；Windows 装 MinGW-w64 或用 Visual Studio Build Tools 里的 cl",
+    "本仓库不自动装 MATLAB（商业授权 + 数十 GB）：有学校授权的自行安装；没有可用 Octave 跑 .m 兼容语法替代（macOS: brew install octave；Windows 到 Octave 官网下载安装包）",
+    "国内直连 GitHub Releases 常掉到 30 KB/s，加 https://gh-proxy.com/ 前缀可到 4-8 MB/s（apply.py --gh-proxy auto 已内置多路回退，装工具/下资源时用得上）"
+  ]
+}

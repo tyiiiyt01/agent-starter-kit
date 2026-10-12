@@ -1,0 +1,71 @@
+{
+  "_note": "场景预设。用户说一句话，agent 就能据此定下装哪些能力包，不用让小白自己挑包名。",
+  "_usage": "agent 读用户原话 → 匹配下面任一 trigger 里的说法 → 用对应的 packs。匹配不上就默认装 code，并告诉用户「以后想加随时说」。",
+
+  "default": "code",
+
+  "presets": {
+    "thesis": {
+      "label": "写毕业论文",
+      "packs": ["research", "writing"],
+      "trigger": ["毕业论文", "写论文", "学位论文", "开题", "文献综述", "毕业设计", "答辩"],
+      "why": "研究包管文献检索与引用，写作包管排版、图表规范、实验报告"
+    },
+
+    "math-modeling": {
+      "label": "参加数学建模竞赛",
+      "packs": ["math-modeling", "code", "writing"],
+      "trigger": ["数学建模", "数模", "国赛", "美赛", "CUMCM", "MCM", "建模比赛", "三天竞赛"],
+      "why": "数模包管求解器栈与论文模板，编程包管代码跑通，写作包管图表规范"
+    },
+
+    "coursework": {
+      "label": "上专业课 / 备考",
+      "packs": ["study", "code"],
+      "trigger": ["上专业课", "复习", "考试", "做题", "期末", "考研", "写作业", "课程", "学习"],
+      "why": "学习包管讲解与习题引导，编程包管课程里的代码作业"
+    },
+
+    "office": {
+      "label": "日常办公",
+      "packs": ["office", "office-work"],
+      "trigger": ["上班", "办公", "工作", "公司", "报表", "合同", "会议", "纪要", "周报", "ppt", "汇报"],
+      "why": "文档包管 Word/Excel/PPT/PDF 与批量生成，协作包管会议纪要与邮件日程"
+    },
+
+    "research": {
+      "label": "做科研 / 发小论文",
+      "packs": ["research", "writing", "math-modeling"],
+      "trigger": ["科研", "发论文", "投期刊", "小论文", "做实验", "数据调研", "调研", "综述"],
+      "why": "覆盖检索、引用、图表规范、数据建模与统计分析"
+    },
+
+    "engineering": {
+      "label": "理工科课程作业",
+      "packs": ["code", "study", "writing"],
+      "trigger": ["c++", "cpp", "编程", "代码", "实验报告", "数据结构", "算法", "课程设计"],
+      "why": "编程包管 Python/C++ 跑通，学习包管讲解，写作包管实验报告"
+    },
+
+    "student-work": {
+      "label": "学生工作 / 宣传物料",
+      "packs": ["design", "office"],
+      "trigger": ["宣传", "海报", "社团", "学生会", "物料", "图片处理", "推文配图", "活动策划", "宣传部"],
+      "why": "设计包管图片批处理与物料生成，文档包管策划书、通知、报表"
+    },
+
+    "all": {
+      "label": "全都要",
+      "packs": ["code", "research", "math-modeling", "writing", "office", "office-work", "study", "design"],
+      "trigger": ["都要", "全套", "全部", "all", "不差这一点"],
+      "why": "八个包全装。装的东西多、耗时长，依赖也更容易失败 —— 要提醒用户这一点"
+    }
+  },
+
+  "agent_notes": [
+    "匹配不上时不要瞎猜，装 default（code）并告诉用户以后可以随时加。",
+    "用户可能只说「帮我装好」，这时直接问一句「你主要用来做什么？」比装全套更合适。",
+    "选定预设后，仍要走 INSTALL.md 的 Step 3：先 --dry-run 打印清单，等用户确认再装。",
+    "presets 里的 packs 只是建议组合，用户可以点名要某个包，以用户说的为准。"
+  ]
+}

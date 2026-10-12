@@ -1,0 +1,51 @@
+{
+  "name": "study",
+  "display": "学习与讲解",
+  "for": "上课、复习、备考，需要把知识点讲透和整理笔记的学生",
+  "skills": ["study-tutor"],
+  "mcp": [],
+  "pythonDeps": [
+    {
+      "pip": "matplotlib",
+      "import": "matplotlib",
+      "tier": "light",
+      "why": "函数图像与原理示意图绘制（含中文字体配置）"
+    },
+    {
+      "pip": "numpy",
+      "import": "numpy",
+      "tier": "light",
+      "why": "数值计算，用于讲解例题与验证结果"
+    },
+    {
+      "pip": "sympy",
+      "import": "sympy",
+      "tier": "light",
+      "why": "符号计算（公式推导、解方程、化简），课程作业刚需"
+    }
+  ],
+  "cliDeps": [
+    {
+      "name": "markitdown",
+      "bins": ["markitdown"],
+      "tier": "light",
+      "why": "把课件 / PDF / Word / PPT 转成 Markdown，便于讲解与做笔记",
+      "knownPaths": {
+        "darwin": ["~/.local/bin/markitdown", "/opt/homebrew/bin/markitdown"],
+        "win32": ["%APPDATA%/Python/Scripts/markitdown.exe"],
+        "linux": ["~/.local/bin/markitdown", "/usr/local/bin/markitdown"]
+      },
+      "install": {
+        "darwin": "python3 -m pip install --user markitdown",
+        "win32": "py -m pip install --user markitdown",
+        "linux": "python3 -m pip install --user markitdown"
+      },
+      "fallback": "没有 markitdown 时改用 pandoc 转 Markdown，或用 python-docx / pypdf 读取课件后自行整理"
+    }
+  ],
+  "manual": [
+    "截图转公式需要 OCR：先 python3 -m pip install pytesseract pillow，再装系统级 tesseract（macOS: brew install tesseract tesseract-lang；Windows 装 UB-Mannheim 发行版并加入 PATH）",
+    "LaTeX 排版需要本地 TeX 环境：本包未自动装，可自行装轻量的 tectonic（macOS: brew install tectonic；Windows: winget install TectonicProject.Tectonic）或完整 TeX Live / MacTeX；没有 TeX 时仍可生成 .tex 源码交给你自行编译",
+    "「做题能力」= 讲解 + 步骤引导 + 校验，不代写作业；遇到原题求解只会给思路与检查，不会直接给答案"
+  ]
+}

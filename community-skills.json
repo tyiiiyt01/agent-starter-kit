@@ -1,0 +1,177 @@
+{
+  "_note": "社区高星技能清单。可选安装，不在默认路径里 —— 因为技能也不是越多越好。每条 repo 都真实存在，stars 为 GitHub 查询量级；查不到许可证的写「未核实」，不编造。subdirs 是安装程序会逐个克隆后检查 SKILL.md 的子目录；标「已核实」的目录结构我实际读过仓库，其余在 note 里说明。",
+  "_usage": "python3 scripts/apply.py --packs <包> --with-community all   或   --with-community superpowers,pptx",
+  "_excluded": "未收录 hesreallyhim/awesome-claude-code（~55k）：它是策展索引（README 列表），本身不是 SKILL.md 技能集合，没有可复制的技能目录，装了只会报「没找到子目录」。作为「去哪找技能」的索引仍有价值，但不适合放进安装清单。",
+  "skills": [
+    {
+      "id": "anthropics-skills",
+      "repo": "https://github.com/anthropics/skills",
+      "what": "官方文档四件套技能：docx / pptx / xlsx / pdf 的文件级读写",
+      "stars": "~180k",
+      "license": "未核实（仓库未提供 SPDX 许可标识）",
+      "license_risk": "",
+      "subdirs": ["skills/docx", "skills/pptx", "skills/xlsx", "skills/pdf"],
+      "note": "本清单里最该推荐的。四个目录结构一致（skills/<name>/SKILL.md），已核实 skills/docx，其余同构；安装时会逐个验证 SKILL.md，缺失自动跳过。"
+    },
+    {
+      "id": "superpowers",
+      "repo": "https://github.com/obra/superpowers",
+      "what": "工程方法论元技能：头脑风暴 → 写计划 → TDD → 子代理协作 → 独立验证收尾的完整流程",
+      "stars": "~296k",
+      "license": "MIT",
+      "license_risk": "",
+      "subdirs": [
+        "skills/brainstorming",
+        "skills/writing-plans",
+        "skills/executing-plans",
+        "skills/test-driven-development",
+        "skills/subagent-driven-development",
+        "skills/systematic-debugging",
+        "skills/requesting-code-review",
+        "skills/receiving-code-review",
+        "skills/verification-before-completion",
+        "skills/using-git-worktrees",
+        "skills/finishing-a-development-branch",
+        "skills/dispatching-parallel-agents",
+        "skills/diagnosing-superpowers",
+        "skills/using-superpowers",
+        "skills/writing-skills"
+      ],
+      "note": "偏重，适合常写代码的人；对只写文档的人是负担。仓库 skills/ 下共 15 个技能，skills/ 本身不是技能目录（无 SKILL.md），所以逐个子目录列出。已核实 skills/using-superpowers/SKILL.md，其余同构。"
+    },
+    {
+      "id": "ppt-master",
+      "repo": "https://github.com/hugohe3/ppt-master",
+      "what": "从文档或主题生成原生可编辑 PowerPoint（原生形状/过渡/动画、按需图表、讲稿配音）",
+      "stars": "~61k",
+      "license": "MIT",
+      "license_risk": "",
+      "subdirs": ["skills/ppt-master"],
+      "note": "已核实 skills/ppt-master/SKILL.md。技能目录里带 scripts/ 和 templates/，仓库根有 requirements.txt，需要 Python 环境；重排版/动画的部分依赖较多，装前看清依赖。"
+    },
+    {
+      "id": "mathmodeling-skills",
+      "repo": "https://github.com/zhnnky329/MathModeling-skills",
+      "what": "数模竞赛分阶段流程（审题 → 选方法 → 建模 → 代码 → 灵敏度 → 成稿），含 Python / MATLAB·北太天元 代码分支",
+      "stars": "1.06k",
+      "license": "MIT",
+      "license_risk": "",
+      "subdirs": [
+        "plugins/mathmodeling-skills/skills/workflow-orchestrator",
+        "plugins/mathmodeling-skills/skills/problem-parser",
+        "plugins/mathmodeling-skills/skills/problem-classifier",
+        "plugins/mathmodeling-skills/skills/method-selector",
+        "plugins/mathmodeling-skills/skills/model-assumptions-builder",
+        "plugins/mathmodeling-skills/skills/python-model-code-generator",
+        "plugins/mathmodeling-skills/skills/matlab-model-code-generator",
+        "plugins/mathmodeling-skills/skills/robustness-checker",
+        "plugins/mathmodeling-skills/skills/paper-section-writer"
+      ],
+      "note": "技能实际位于 plugins/mathmodeling-skills/skills/ 下，共 29 个；此处只列主流程 9 个（技能不是越多越好）。已核实 workflow-orchestrator/SKILL.md，其余同构。"
+    },
+    {
+      "id": "math-modeling-skill",
+      "repo": "https://github.com/XiaoMaColtAI/math-modeling-skill",
+      "what": "数模三阶段工作流：建模分析 / Python·MATLAB 编程 / DOCX 论文，含算法资源库与论文模板",
+      "stars": "1.86k",
+      "license": "未核实",
+      "license_risk": "",
+      "subdirs": ["skills"],
+      "note": "⚠ 该仓库的 SKILL.md 在仓库根目录，不是子目录形式。本安装器只支持「子目录技能」，所以这里会被判定为『未找到子目录』并跳过（不要改成 \".\"，那会触发对宿主 skills 目录的误删）。要用请手动克隆后把仓库整体拷进宿主的 skills/math-modeling-skill/。目录结构已核实。"
+    },
+    {
+      "id": "academic-paper-skills",
+      "repo": "https://github.com/lishix520/academic-paper-skills",
+      "what": "学术论文写作框架：strategist（选题与规划）+ composer（成稿写作），带质量检查点",
+      "stars": "1.37k",
+      "license": "MIT",
+      "license_risk": "",
+      "subdirs": ["strategist", "composer"],
+      "note": "已核实 strategist/SKILL.md 与 composer/SKILL.md，技能直接位于仓库根下的两个目录。面向英文/科研写作流程。"
+    },
+    {
+      "id": "tutor-skills",
+      "repo": "https://github.com/bevibing/tutor-skills",
+      "what": "学习/讲解类技能：把 PDF、文档、代码库整理成可复习的学习库（Obsidian 风格）",
+      "stars": "1.34k",
+      "license": "MIT",
+      "license_risk": "",
+      "subdirs": ["skills/tutor", "skills/tutor-setup"],
+      "note": "已核实 skills/tutor/SKILL.md 与 skills/tutor-setup/SKILL.md。产物以 Markdown 学习库为主，不依赖付费服务。"
+    },
+    {
+      "id": "security-audit-skill",
+      "repo": "https://github.com/cloudflare/security-audit-skill",
+      "what": "多阶段代码安全审计，产出可机器读取的发现项（Cloudflare 出品）",
+      "stars": "~28k",
+      "license": "MIT",
+      "license_risk": "",
+      "subdirs": ["skills/security-audit"],
+      "note": "已核实 skills/security-audit/SKILL.md。偏专业，普通课程作业用不上；做后端/交付前自查时有用。"
+    },
+    {
+      "id": "ui-ux-pro-max-skill",
+      "repo": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+      "what": "UI/UX 设计智能：设计系统、配色排版、落地页与幻灯片风格",
+      "stars": "~133k",
+      "license": "MIT",
+      "license_risk": "",
+      "subdirs": [
+        ".claude/skills/ui-ux-pro-max",
+        ".claude/skills/design-system",
+        ".claude/skills/ui-styling",
+        ".claude/skills/slides",
+        ".claude/skills/banner-design",
+        ".claude/skills/brand",
+        ".claude/skills/design"
+      ],
+      "note": "技能位于 .claude/skills/ 下（注意这是以点开头的目录），共 7 个，已核实目录列表。适合做前端/作品集/PPT 视觉的人。"
+    },
+    {
+      "id": "cumcm-thesis",
+      "repo": "https://github.com/latexstudio/CUMCMThesis",
+      "what": "全国大学生数学建模竞赛 LaTeX 论文模板（已适配 2026 年格式）",
+      "stars": "1.44k",
+      "license": "未核实",
+      "license_risk": "",
+      "subdirs": ["latex"],
+      "note": "⚠ 这是 LaTeX 论文模板仓库，不是 SKILL.md 技能，安装器会因找不到技能子目录而跳过。收录是给 AI 当资料/手动取用：需要模板时直接克隆，把 .cls 和示例 .tex 拷进你的论文目录。star 已核实，许可证未核实。"
+    },
+    {
+      "id": "markdown-viewer-skills",
+      "repo": "https://github.com/markdown-viewer/skills",
+      "what": "在 Markdown 里直接生成数据可视化与图表（ECharts/PlantUML/Vega 等引擎，配 catalog 与示例）",
+      "stars": "3.36k",
+      "license": "CC-BY-4.0",
+      "license_risk": "CC-BY-4.0 要求署名：再分发或二次使用时须保留出处与许可证文本",
+      "subdirs": ["documd-visuals"],
+      "note": "已核实 documd-visuals/SKILL.md。仓库根下的 research/ 只是研究资料（无 SKILL.md），不是技能，未列入。适合做报告配图/数据分析图。"
+    },
+    {
+      "id": "firecrawl-cli",
+      "repo": "https://github.com/firecrawl/cli",
+      "what": "网页抓取/调研：搜索、抓取、爬取、站点地图、浏览器交互（Firecrawl 官方 CLI + agent skills）",
+      "stars": "648",
+      "license": "未核实",
+      "license_risk": "",
+      "subdirs": [
+        "skills/firecrawl-scrape",
+        "skills/firecrawl-search",
+        "skills/firecrawl-crawl",
+        "skills/firecrawl-map",
+        "skills/firecrawl-agent"
+      ],
+      "note": "技能位于 skills/ 下共 13 个，此处列 5 个核心（已核实目录列表）。⚠ 抓取能力依赖 Firecrawl 远程 API（需 API key，免费额度有限），不是纯本地工具；介意联网/收费的别装。"
+    },
+    {
+      "id": "garden-skills",
+      "repo": "https://github.com/ConardLi/garden-skills",
+      "what": "设计/图像类技能集合：gpt-image-2（图像生成）、web-design-engineer（网页设计）、文章美化等",
+      "stars": "~12.8k",
+      "license": "MIT",
+      "license_risk": "",
+      "subdirs": ["skills/gpt-image-2", "skills/web-design-engineer"],
+      "note": "技能位于 skills/ 下共 5 个（另有 beautiful-article、kb-retriever、web-video-presentation），已核实目录列表。图像生成类技能通常要外接图像 API/服务，无 key 时无法出图。"
+    }
+  ]
+}
