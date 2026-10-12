@@ -78,7 +78,7 @@ git clone --branch v0.1.0 --depth 1 https://github.com/tyiiiyt01/agent-starter-k
 
 **文档**
 
-- `README.md`（给人看）· `AGENTS.md`（给 AI 看的行为约束）· `INSTALL.md`（给 AI 看的执行手册，六个 Step）分读者拆分
+- `README.md`（给人看）· `AGENTS.md`（给 AI 看的行为约束）· `INSTALL.md`（给 AI 看的执行手册，Step 0–6）分读者拆分
 
 <!--
 下一个版本请在此处新增一节，例如：
